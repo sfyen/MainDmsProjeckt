@@ -177,15 +177,14 @@ app.UseCors("AllowLocalFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
-
 // ==============================
-// 🔐 Toujours rediriger vers la page Security
+// 🔐 Zugangscode-Schutz (affiche Security si pas autorisé)
 // ==============================
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value?.ToLower();
 
-    // ⚙️ Autoriser uniquement Security et fichiers statiques
+    // Autoriser les fichiers statiques et la page de sécurité
     if (path.Contains("/workflows/security") ||
         path.Contains(".css") ||
         path.Contains(".js") ||
@@ -198,9 +197,18 @@ app.Use(async (context, next) =>
         return;
     }
 
-    // 🚨 Rediriger tout le reste vers la page Security
-    context.Response.Redirect("/Workflows/Security");
+    // Vérifie si l'utilisateur a déjà entré le bon code
+    var accessGranted = context.Session.GetString("AccessGranted");
+    if (accessGranted != "true")
+    {
+        context.Response.Redirect("/Workflows/Security");
+        return;
+    }
+
+    // Sinon, laisse continuer normalement
+    await next();
 });
+
 
 app.UseStaticFiles();
 
