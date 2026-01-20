@@ -1,0 +1,405 @@
+﻿@page
+@model DmsProjeckt.Pages.Admin.MeinBenutzerModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<div class="modern-admin-wrapper">
+    <div class="admin-header">
+        <h2>👤 Von mir erstellte Benutzer</h2>
+        <p>Verwalte Benutzerkonten und Zugriffsrechte</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-modern alert-success">✅ @TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert-modern alert-danger">❌ @TempData["ErrorMessage"]</div>
+    }
+
+    <div class="table-responsive">
+        <table class="modern-admin-table">
+            <thead>
+                <tr>
+                    <th>Benutzername</th>
+                    <th>E-Mail</th>
+                    <th>Rolle</th>
+                    <th>Aktion</th>
+                    <th>Passwort</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Users)
+                {
+                    <tr>
+                        <td><strong>@user.UserName</strong></td>
+                        <td>@user.Email</td>
+                        <td>
+                            @if (user.Role == "Admin")
+                            {
+                                <span class="role-badge role-admin">🛡️ Admin</span>
+                            }
+                            else if (user.Role == "Editor")
+                            {
+                                <span class="role-badge role-editor">🖋️ Editor</span>
+                            }
+                            else if (user.Role == "Viewer")
+                            {
+                                <span class="role-badge role-viewer">👀 Viewer</span>
+                            }
+                            else
+                            {
+                                <span class="role-badge role-default">@user.Role</span>
+                            }
+                        </td>
+                        <td>
+                            <form method="post" asp-page-handler="ChangeRole" class="role-form">
+                                <input type="hidden" name="UserId" value="@user.UserId" />
+                                <select name="SelectedRole" class="modern-select">
+                                    @foreach (var role in Model.AvailableRoles)
+                                    {
+                                        <option value="@role" selected="@(role == user.Role)">
+                                            @role
+                                        </option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn-modern-small">
+                                    🔄 Aktualisieren
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <button type="button" class="btn-modern-outline"
+                                    onclick="editPasswort('@user.UserId', '@user.UserName')">
+                                🔑 Passwort setzen
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Audit Log Section -->
+    <div class="audit-section">
+        <h3>📝 Aktivitätsprotokoll Ihrer Benutzer</h3>
+        <div class="table-responsive">
+            <table class="modern-admin-table">
+                <thead>
+                    <tr>
+                        <th>⏰ Zeitpunkt</th>
+                        <th>⚙️ Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Logs != null && Model.Logs.Any())
+                    {
+                        foreach (var log in Model.Logs)
+                        {
+                            <tr>
+                                <td><span class="timestamp">@log.Timestamp.ToString("HH:mm dd.MM.yyyy")</span></td>
+                                <td>@log.Action</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="2" class="empty-state">Keine Aktivitäten vorhanden.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Modern Admin Wrapper */
+    .modern-admin-wrapper {
+        background: white;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        margin: 2rem 0;
+    }
+
+    /* Modern Header */
+    .admin-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .admin-header h2 {
+        color: #000;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .admin-header p {
+        color: #666;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Modern Alerts */
+    .alert-modern {
+        padding: 1rem 1.5rem;
+        border-radius: 0.6rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Table Container */
+    .table-responsive {
+        border-radius: 0.8rem;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    /* Modern Table */
+    .modern-admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        color: #333;
+        margin: 0;
+    }
+
+    .modern-admin-table thead {
+        background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+    }
+
+    .modern-admin-table th {
+        color: #000;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        padding: 1.2rem 1.5rem;
+        border-bottom: 2px solid #e0e0e0;
+        text-align: left;
+    }
+
+    .modern-admin-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f5f5f5;
+        vertical-align: middle;
+        color: #333;
+    }
+
+    .modern-admin-table tbody tr {
+        transition: all 0.2s;
+        background-color: white;
+    }
+
+    .modern-admin-table tbody tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    .modern-admin-table tbody tr:hover {
+        background-color: #f0f4f8;
+        transform: scale(1.001);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* Role Badges */
+    .role-badge {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .role-admin {
+        background: #fce4ec;
+        color: #c62828;
+        border: 1px solid #f8bbd9;
+    }
+
+    .role-editor {
+        background: #fff3e0;
+        color: #e65100;
+        border: 1px solid #ffcc80;
+    }
+
+    .role-viewer {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #a5d6a7;
+    }
+
+    .role-default {
+        background: #f5f5f5;
+        color: #666;
+        border: 1px solid #e0e0e0;
+    }
+
+    /* Modern Select */
+    .modern-select {
+        background: white;
+        color: #000;
+        border: 1.5px solid #e0e0e0;
+        padding: 0.6rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        width: 100%;
+        max-width: 150px;
+    }
+
+    .modern-select:focus {
+        border-color: #000;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
+
+    /* Role Form */
+    .role-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Modern Buttons */
+    .btn-modern-small {
+        background: #000;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-modern-small:hover {
+        background: #333;
+        transform: translateY(-1px);
+    }
+
+    .btn-modern-outline {
+        background: white;
+        color: #000;
+        border: 1.5px solid #e0e0e0;
+        padding: 0.5rem 1rem;
+        border-radius: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-modern-outline:hover {
+        border-color: #000;
+        background: #f5f5f5;
+    }
+
+    /* Audit Section */
+    .audit-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .audit-section h3 {
+        color: #000;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .timestamp {
+        color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #999;
+        padding: 2rem 1rem;
+        font-style: italic;
+    }
+
+    @@media (max-width: 700px) {
+        .modern-admin-wrapper {
+            padding: 1.5rem 1rem;
+        }
+
+        .modern-admin-table th,
+        .modern-admin-table td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .modern-select {
+            max-width: 100%;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function editPasswort(userId, userName) {
+            Swal.fire({
+                title: '🔑 Passwort setzen/löschen',
+                html: `<div style='color:#333; font-size:1.1em; margin-bottom:10px'>User: <b>${userName}</b></div>
+                    <input id="swal-passwort" class="swal2-input" style="color:#333;background:#f8f9fa;border:2px solid #e0e0e0;border-radius:0.5rem" placeholder="Neues Passwort (leer = löschen)" type="password">`,
+                background: '#fff',
+                color: '#333',
+                showCancelButton: true,
+                confirmButtonText: 'Speichern',
+                confirmButtonColor: '#000',
+                cancelButtonText: 'Abbrechen',
+                cancelButtonColor: '#666',
+                focusConfirm: false,
+                preConfirm: () => document.getElementById('swal-passwort').value
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                const neuesPasswort = result.value;
+                fetch('?handler=SetzeBenutzerPasswort', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId, neuesPasswort: neuesPasswort })
+                })
+                .then(res => res.json())
+                .then(json => {
+                    if (json.success)
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Gespeichert',
+                            background: '#fff',
+                            color: '#333',
+                            confirmButtonColor: '#28a745'
+                        }).then(() => location.reload());
+                    else Swal.fire({
+                        icon: 'error',
+                        title: 'Fehler',
+                        text: json.message || 'Unbekannter Fehler.',
+                        background: '#fff',
+                        color: '#333'
+                    });
+                });
+            });
+        }
+    </script>
+}

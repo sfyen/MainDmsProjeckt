@@ -1,0 +1,579 @@
+﻿@page "{workflowId:int}/{stepId:int}"
+@model StepDetailModel
+@{
+    var vm = Model.VM;
+}
+
+<div class="modern-workflow-wrapper">
+    <div class="workflow-header">
+        <h2>📋 Workflow Details</h2>
+        <p>@vm.Workflow.Title</p>
+    </div>
+
+    <!-- Workflow Info Card -->
+    <div class="workflow-info-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="workflow-title mb-0">@vm.Workflow.Title</h3>
+        </div>
+        <div class="workflow-meta mb-2">
+            <span class="meta-item"><strong>Erstellt von:</strong> @vm.Workflow.CreatedByUser?.Vorname @vm.Workflow.CreatedByUser?.Nachname</span>
+            <span class="meta-item"><strong>Start:</strong> @vm.Workflow.CreatedAt.ToString("dd.MM.yyyy")</span>
+        </div>
+        <div class="mb-3">
+            <strong>Beschreibung:</strong> @vm.Workflow.Description
+        </div>
+        <div>
+            <strong>Workflow-Dokumente:</strong>
+            @if (vm.Dokumente.Any())
+            {
+                <ul class="document-list">
+                    @foreach (var d in vm.Dokumente)
+                    {
+                        <li class="document-item">
+                            <div>
+                                <a href="@d.Dateipfad" target="_blank" class="doc-link">@d.Dateiname</a>
+                                <span class="badge badge-workflow">workflow</span>
+                            </div>
+                            <button type="button"
+                                    class="btn-options toggle-options"
+                                    data-filename="@d.Dateiname"
+                                    data-url="@d.Dateipfad"
+                                    data-id="@d.Id">
+                                ⋮
+                            </button>
+                        </li>
+                    }
+
+                </ul>
+            }
+            else
+            {
+                <span class="text-muted ms-2">Keine Dokumente hinzugefügt.</span>
+            }
+        </div>
+    </div>
+
+    <!-- Step Timeline -->
+    <div class="timeline">
+        @foreach (var step in vm.Steps.OrderBy(s => s.Order))
+        {
+            bool isCurrentOpen = (step.Id == vm.AktuellerStepId && !step.Completed);
+
+            <div class="step-card mb-4 @(isCurrentOpen ? "step-current" : "")">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="step-category mb-0">@step.Kategorie</h4>
+                    <span class="badge @(step.Completed ? "badge-success" : "badge-warning")">
+                        @(step.Completed ? "Erledigt" : "Ausstehend")
+                    </span>
+                </div>
+                <div class="mb-2"><strong>Beschreibung:</strong> @step.Description</div>
+                <div class="step-meta-grid mb-2">
+                    <div>
+                        <strong>Bearbeiter:</strong>
+                        @if (vm.StepCompletedByUser.ContainsKey(step.Id))
+                        {
+                            var completedBy = vm.StepCompletedByUser[step.Id];
+                            var abteilungInfo = completedBy.Abteilung != null ? $" ({completedBy.Abteilung.Name})" : "";
+                            <span>@completedBy.Vorname @completedBy.Nachname@abteilungInfo</span>
+                        }
+                        else if (vm.StepAssignmentDisplay.ContainsKey(step.Id))
+                        {
+                            <span>@vm.StepAssignmentDisplay[step.Id]</span>
+                        }
+                        else
+                        {
+                            <span>@step.AssignedToUser?.Vorname @step.AssignedToUser?.Nachname</span>
+                        }
+                    </div>
+                    <div>
+                        <strong>Fällig bis:</strong> @step.DueDate?.ToString("dd.MM.yyyy HH:mm")
+                    </div>
+                </div>
+               
+                <div class="mt-3">
+                    @{
+                        var isCommentOpen = (Model.OffenesKommentarStepId == step.Id && Model.Request.Method == "POST");
+                    }
+
+                    <button type="button"
+                            class="btn-link-comment"
+                            onclick="bootstrap.Collapse.getOrCreateInstance(document.getElementById('comments-@step.Id')).toggle()">
+                        💬 Kommentare anzeigen/verbergen
+                    </button>
+
+                   
+
+                    <div class="collapse @(isCommentOpen ? "show" : "")" id="comments-@step.Id">
+                        <div class="comment-section mt-3">
+                            @if (vm.StepKommentare.ContainsKey(step.Id) && vm.StepKommentare[step.Id].Any())
+                            {
+                                <ul class="comment-list">
+                                    @foreach (var k in vm.StepKommentare[step.Id].OrderBy(c => c.CreatedAt))
+                                    {
+                                        <li class="comment-item">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <span class="comment-author">@k.User?.Vorname @k.User?.Nachname</span>
+                                                <span class="comment-date">@k.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                                            </div>
+                                            <div class="comment-text">@k.Text</div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Noch keine Kommentare.</span>
+                            }
+
+                            <form method="post" class="mt-3">
+                                <input type="hidden" name="StepId" value="@step.Id" />
+                                <textarea name="Kommentar" class="form-control mb-2" placeholder="Kommentar hinzufügen..."></textarea>
+                                <button class="btn btn-primary btn-sm">Kommentar speichern</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                @if (isCurrentOpen)
+                {
+                    var canComplete = (step.UserId == Model.CurrentUserId) || 
+                                      (step.UserIds != null && step.UserIds.Contains(Model.CurrentUserId));
+                    
+                    if (canComplete)
+                    {
+                        <div class="step-card-footer">
+                            @* Wenn Upload-Step -> Button zum Upload *@
+                            @if (step.Kategorie == "Upload")
+                            {
+                                <div class="upload-section">
+                                    <form method="post" enctype="multipart/form-data" asp-page-handler="Upload">
+                                        <input type="hidden" name="StepId" value="@step.Id" />
+                                        <div class="mb-2">
+                                            <label class="form-label">Datei für diesen Schritt hochladen</label>
+                                            <input type="file" name="Dateien" class="form-control" multiple />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">📤 Hochladen</button>
+                                    </form>
+                                </div>
+                            }
+
+                            @* Genereller "Erledigt"-Button *@
+                            <form asp-page-handler="Erledigen" method="post">
+                                <input type="hidden" name="StepId" value="@step.Id" />
+                                <button type="submit" class="btn btn-success">✅ Erledigt</button>
+                            </form>
+                        </div>
+                    }
+                }
+
+            </div>
+        }
+    </div>
+</div>
+<div id="global-options-menu" class="options-menu">
+    <a href="#" id="opt-edit" class="option-item">✏️ Bearbeiten</a>
+    <a href="#" id="opt-open" target="_blank" class="option-item">📂 Öffnen</a>
+</div>
+@section Scripts {
+    <script>
+        const menu = document.getElementById("global-options-menu");
+        const editLink = document.getElementById("opt-edit");
+        const openLink = document.getElementById("opt-open");
+
+        document.addEventListener("click", (e) => {
+            if (e.target.classList.contains("toggle-options")) {
+                e.stopPropagation();
+
+                const button = e.target;
+                const filename = button.dataset.filename;
+                const url = button.dataset.url;
+                const docId = button.dataset.id;
+
+                // Links setzen
+                editLink.href = `/Dokument/Bearbeiten?id=${docId}&fromTask=true`;
+                openLink.href = url;
+
+                // Menü positionieren
+                const rect = button.getBoundingClientRect();
+                menu.style.top = `${rect.bottom + 4}px`;
+                menu.style.left = `${rect.left}px`;
+
+                menu.style.display = "block";
+                return;
+            }
+
+            if (e.target.closest(".option-item")) {
+                menu.style.display = "none";
+                return;
+            }
+
+            menu.style.display = "none";
+        });
+    </script>
+}
+
+<style>
+    /* CRITICAL: Override Global Dark Theme from site.css */
+    body {
+        background-color: #f5f7fa !important;
+        color: #333 !important;
+    }
+
+    /* Modern Workflow Wrapper */
+    .modern-workflow-wrapper {
+        background: white !important;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        margin: 2rem 0;
+        color: #000 !important;
+    }
+
+    .workflow-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .workflow-header h2 {
+        color: #000 !important;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .workflow-header p {
+        color: #666 !important;
+        font-size: 1.1rem;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* Workflow Info Card */
+    .workflow-info-card {
+        background: #f9f9f9 !important;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.8rem;
+        padding: 1.5rem;
+        color: #000 !important;
+    }
+
+    .workflow-title {
+        color: #000 !important;
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    .workflow-meta {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        color: #000 !important;
+    }
+
+    .meta-item {
+        color: #000 !important;
+    }
+
+    .meta-item strong,
+    .workflow-info-card strong {
+        color: #000 !important;
+    }
+
+    /* Document List */
+    .document-list {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .document-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* BLACK LINK COLORS */
+    .doc-link {
+        color: #000 !important;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .doc-link:hover {
+        text-decoration: underline;
+    }
+
+    .badge-workflow {
+        background: #e0e0e0 !important;
+        color: #000 !important;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .btn-options {
+        background: transparent !important;
+        border: none;
+        color: #666 !important;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-options:hover {
+        color: #000 !important;
+        background: #f5f5f5 !important;
+        border-radius: 0.25rem;
+    }
+
+    /* Step Cards */
+    .step-card {
+        background: white !important;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.8rem;
+        padding: 1.5rem;
+        transition: all 0.2s;
+        color: #000 !important;
+    }
+
+    /* ENHANCED HOVER EFFECT */
+    .step-card:hover {
+        background: #f8f9fa !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transform: translateY(-1px);
+    }
+
+    /* BLACK HIGHLIGHT BORDER */
+    .step-current {
+        border: 2px solid #000 !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        background: #f9f9f9 !important;
+    }
+
+    /* BLACK TEXT */
+    .step-category {
+        color: #000 !important;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    .step-meta-grid {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        color: #000 !important;
+        font-size: 0.95rem;
+    }
+
+    .step-meta-grid strong,
+    .step-meta-grid span,
+    .step-card strong,
+    .step-card div,
+    .step-card .mb-2 {
+        color: #000 !important;
+    }
+
+    /* Badges */
+    .badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+    }
+
+    .badge-warning {
+        background: #fef3c7 !important;
+        color: #92400e !important;
+    }
+
+    /* Comment Section - BLACK */
+    .btn-link-comment {
+        background: none !important;
+        border: none;
+        color: #000 !important;
+        padding: 0;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-link-comment:hover {
+        text-decoration: underline;
+    }
+
+    .comment-section {
+        background: #f9f9f9 !important;
+        border-radius: 0.6rem;
+        padding: 1rem;
+    }
+
+    .comment-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 1rem;
+    }
+
+    .comment-item {
+        margin-bottom: 1rem;
+    }
+
+    .comment-author {
+        font-weight: 600;
+        color: #000 !important;
+        margin-right: 0.5rem;
+    }
+
+    .comment-date {
+        color: #666 !important;
+        font-size: 0.9rem;
+    }
+
+    /* BLACK COMMENT BORDER */
+    .comment-text {
+        background: white !important;
+        border-left: 3px solid #000;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        color: #000 !important;
+    }
+
+    .comment-section textarea {
+        background: white !important;
+        border: 1.5px solid #e0e0e0;
+        color: #000 !important;
+        border-radius: 0.6rem;
+    }
+
+    .comment-section textarea:focus {
+        border-color: #000 !important;
+        box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
+        outline: none;
+    }
+
+    .comment-section textarea::placeholder {
+        color: #999 !important;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: #000 !important;
+        border: none;
+        color: white !important;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: #333 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .btn-success {
+        background: #22c55e !important;
+        border: none;
+        color: white !important;
+        padding: 0.75rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-success:hover {
+        background: #16a34a !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Step Footer */
+    .step-card-footer {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .upload-section {
+        flex: 1;
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        background: white !important;
+        border: 1.5px solid #e0e0e0;
+        color: #000 !important;
+        border-radius: 0.6rem;
+        padding: 0.75rem;
+    }
+
+    .form-control:focus {
+        border-color: #000 !important;
+        box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
+        outline: none;
+    }
+
+    .form-label {
+        color: #000 !important;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Options Menu */
+    .options-menu {
+        display: none;
+        position: fixed;
+        background: white !important;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.6rem;
+        padding: 0.5rem 0;
+        min-width: 160px;
+        z-index: 999999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .option-item {
+        display: block;
+        padding: 0.5rem 1rem;
+        color: #000 !important;
+        text-decoration: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .option-item:hover {
+        background: #f5f5f5 !important;
+        color: #000 !important;
+        text-decoration: none;
+    }
+
+    /* Timeline */
+    .timeline {
+        padding-bottom: 2rem;
+    }
+
+    .text-muted {
+        color: #666 !important;
+    }
+
+    /* Additional overrides */
+    h2, h3, h4, h5, strong {
+        color: #000 !important;
+    }
+</style>

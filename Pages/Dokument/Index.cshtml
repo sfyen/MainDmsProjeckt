@@ -1,0 +1,3698 @@
+﻿@page
+@model DmsProjeckt.Pages.Dokument.IndexModel
+@{
+    ViewData["Title"] = "📁 Dokumentenverwaltung";
+}
+@using System.Security.Claims
+@section Styles {
+    <style>
+        /* ============================================================= */
+        /* 🎨 GLOBAL THEME – BRIGHT WHITE & BLACK TEXT                   */
+        /* ============================================================= */
+
+        body, .content-wrapper, main {
+            background-color: #ffffff !important; /* Pure white background */
+            color: #000000 !important;             /* Force black text */
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Titles */
+        h1, h2, h3, h4, h5, h6 {
+            color: #000000 !important;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Links */
+        a {
+            color: #1565c0; /* Darker blue for better contrast on white */
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+            a:hover {
+                color: #0d47a1;
+                text-decoration: underline;
+            }
+
+        /* Small text */
+        small, .text-muted {
+            color: #455a64 !important; /* Dark grey, not too light */
+        }
+
+        /* ============================================================= */
+        /* 🧩 DASHBOARD CARDS (WHITE)                                   */
+        /* ============================================================= */
+
+        .card-box {
+            background: #ffffff !important;
+            border: 1px solid #e0e0e0;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            color: #000000 !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .card-box:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+
+        .table-container {
+            background: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            color: #000000 !important;
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+            font-size: 1rem;
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+            /* ✅ Tabellenkopf */
+            .modern-table thead {
+                background: #f1f3f5 !important;
+                color: #000000 !important;
+                text-transform: uppercase;
+                font-weight: bold;
+                font-size: 0.9rem;
+            }
+
+            .modern-table th {
+                background: #f1f3f5 !important;
+                color: #000000 !important;
+                font-weight: 700 !important;
+                border-bottom: 2px solid #dee2e6 !important;
+                padding: 14px 18px !important;
+            }
+
+            /* ✅ Tabellenzellen */
+            .modern-table td {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-weight: 500 !important;
+                border-bottom: 1px solid #e9ecef !important;
+                padding: 14px 20px !important;
+                vertical-align: middle !important;
+                border-radius: 6px;
+            }
+
+            /* ✅ Hover-Effekt */
+            .modern-table tbody tr:hover td {
+                background: #f8f9fa !important;
+                transform: scale(1.01);
+                transition: all 0.2s ease-in-out;
+                color: #000000 !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+
+        /* ✅ Abschnittszeile "Gefilterte Dokumente" */
+        .table-section-row {
+            background: #e3f2fd !important;
+            color: #1565c0 !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ============================================================= */
+        /* 🧠 FILTERS BOX                                               */
+        /* ============================================================= */
+
+        .filter-box {
+            background: #ffffff !important;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+            .filter-box .filter-item {
+                width: 100%;
+                min-height: 42px;
+                font-size: 1rem;
+                border-radius: 6px;
+            }
+
+        /* Inputs forced to white bg and black text */
+        input, select, .form-control, .form-select {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #ced4da !important;
+        }
+        
+        input::placeholder {
+            color: #6c757d !important;
+        }
+
+            .filter-box .btn-primary {
+                background: #1e88e5;
+                border: none;
+                color: #ffffff;
+                font-weight: 600;
+                padding: 10px 0;
+            }
+
+                .filter-box .btn-primary:hover {
+                    background: #1565c0;
+                }
+
+            .filter-box .btn-secondary {
+                background: #757575;
+                border: none;
+                color: #fff;
+                font-weight: 500;
+            }
+
+                .filter-box .btn-secondary:hover {
+                    background: #616161;
+                }
+
+        /* ============================================================= */
+        /* 🧩 EXPLORER MODAL                                            */
+        /* ============================================================= */
+
+        .explorer-popup-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            position: fixed;
+            inset: 0;
+            z-index: 1050;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .explorer-popup-window {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        .explorer-popup-body {
+            background-color: #f8f9fa !important;
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            color: #000000 !important;
+        }
+
+        .explorer-abteilung {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+            .explorer-abteilung:hover {
+                background: #f1f3f5;
+                transform: translateY(-2px);
+                border-color: #1e88e5;
+                box-shadow: 0 4px 16px rgba(30, 136, 229, 0.15);
+            }
+
+        .explorer-abteilung-title {
+            color: #000000 !important;
+            font-weight: 700;
+        }
+
+        .explorer-subfolder {
+            border-left: 2px solid #1e88e5;
+        }
+
+        /* Folders & Files */
+        .folder-label {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            color: #000000;
+            /* ... props ... */
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+            .folder-label:hover {
+                background: #f8f9fa;
+                border-color: #1e88e5;
+                color: #000000;
+            }
+
+        .folder-title {
+            font-weight: 600;
+            color: #000000 !important;
+            font-size: 1rem;
+        }
+
+        .folder-path {
+            font-size: 0.8rem;
+            color: #757575;
+        }
+
+        .file-node {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #000000;
+            /* ... props ... */
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+            .file-node:hover {
+                background: #ffffff;
+                border-color: #1e88e5;
+                transform: translateX(4px);
+                box-shadow: 0 2px 8px rgba(30, 136, 229, 0.1);
+            }
+
+        .folder-content {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .folder-tree-node.open > .folder-content {
+            display: block !important;
+            opacity: 1;
+        }
+
+        /* Buttons */
+        .btn, .btn-sm {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #dee2e6;
+        }
+        
+        .btn:hover {
+            background-color: #f1f1f1;
+            color: #000000;
+        }
+
+        /* Badge override */
+        .badge, .badge-kategorie, .badge-abteilung {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Preview Pane */
+        #previewPane {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 60vw; /* Increased width */
+            height: 100vh;
+            background-color: #ffffff !important;
+            z-index: 1080;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease-in-out; 
+            border-left: 1px solid #dee2e6;
+        }
+
+        #previewPane.d-none {
+            display: none !important;
+        }
+        
+        .preview-header {
+            background-color: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6;
+            color: #000000 !important;
+        }
+        
+        .preview-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #ffffff !important;
+        }
+
+        #previewFrame {
+            background-color: #ffffff;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        #previewFallback {
+            background-color: #f8f9fa;
+            color: #757575;
+            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Context Menu */
+        #customContextMenu {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #e0e0e0 !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+        }
+        
+        .context-menu-root li {
+            color: #000000 !important;
+        }
+        
+        .context-menu-root li:hover {
+            background-color: #f5f5f5 !important;
+        }
+        
+        .context-menu-root .menu-group {
+            background: #f8f9fa !important;
+            color: #333333 !important;
+        }
+
+
+        /* Ensure Sidebar is not affected (it has its own styles) or is compatible */
+        /* If sidebar is outside .content-wrapper, it should be fine. If inside, this body override might affect it. */ 
+        /* Assuming Sidebar is separate. */
+
+        /* ============================================================= */
+        /* 🔧 FIXES: BUTTON VISIBILITY                                  */
+        /* ============================================================= */
+
+        /* 1. Export Buttons (CSV, Excel, PDF) */
+        .export-buttons .btn {
+            border: 1px solid #ced4da !important; /* Visible border */
+            color: #000000 !important;             /* Black text */
+            background-color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .export-buttons .btn:hover {
+            background-color: #f1f1f1 !important;
+            border-color: #adb5bd !important;
+        }
+
+        /* 2. Actions Button (3 Dots) inside Table */
+        .modern-table .btn,
+        .modern-table button,
+        .modern-table .btn i,
+        .modern-table button i {
+            color: #000000 !important; /* Force black icon */
+            opacity: 1 !important;      /* Force fully visible */
+            visibility: visible !important; /* Ensure visibility */
+        }
+        
+        .modern-table .btn:hover,
+        .modern-table button:hover {
+            background-color: #e9ecef !important; /* Light grey hover */
+        }
+    </style>
+}
+
+
+
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
+
+@await Html.PartialAsync("_MetaModal")
+@await Html.PartialAsync("_PreviewModal")
+
+<div class="content-wrapper d-flex flex-column flex-grow-1">
+
+        <!-- 🔹 Modern Container with Shadow (same as Aufgaben) -->
+        <div style="background: white; border-radius: 1.1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 2.5rem 2rem; margin: 2rem 0;">
+            
+            <!-- Centered Header with Separator -->
+                <h2 style="color: #000; font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600;">📁 Dokumentenverwaltung</h2>
+                <p style="color: #666; font-size: 1rem; margin: 0;">Verwalte deine Dokumente effizient und sicher</p>
+            </div>
+            
+            <style>
+                /* 🔄 Spinner Overlay */
+                .spinner-overlay {
+                    position: absolute;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(255, 255, 255, 0.9);
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 2000;
+                    backdrop-filter: blur(2px);
+                }
+                .spinner-border-lg {
+                    width: 3rem; height: 3rem; border-width: 0.25em;
+                }
+            </style>
+
+
+
+        <!-- 🌌 Vorschau-Bereich (Split View) -->
+        <div id="previewPane" class="preview-pane d-none bg-white text-dark rounded shadow-lg overflow-hidden">
+            <div class="preview-header d-flex align-items-center bg-light border-bottom border px-3 py-2">
+                <span id="previewTitle" class="fw-bold fs-5 text-info"></span>
+
+                <!-- ✍️ Unterschreiben -->
+                <a id="signBtn" href="#" target="_blank"
+                   class="btn btn-sm btn-outline-warning ms-3 fw-semibold">
+                    ✍️ Unterschreiben
+                </a>
+
+                <!-- ❌ Schließen -->
+                <button class="btn btn-sm btn-outline-danger ms-auto fw-semibold" onclick="closePreview()">✖</button>
+            </div>
+
+            <div class="preview-body bg-white text-dark p-3 position-relative" style="min-height: 60vh;">
+                <!-- 🔄 Loading Spinner -->
+                <div id="previewSpinner" class="spinner-overlay d-none">
+                    <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
+                    <p class="mt-3 text-muted fw-bold">Wird geladen...</p>
+                </div>
+
+                <iframe id="previewFrame" class="w-100 h-100 border-0 rounded" style="background-color: #ffffff;"></iframe>
+                <div id="customPreviewContainer" class="w-100 h-100 overflow-auto p-3 d-none" style="background: #fff; color: #000;"></div>
+
+                <div id="previewFallback" class="text-center text-muted d-none mt-3">
+                    <p>⚠️ Vorschau für diesen Dateityp nicht verfügbar.</p>
+                    <a id="previewDownload" href="#" target="_blank" class="btn btn-outline-primary">⬇ Herunterladen</a>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 🔎 Filterformular -->
+        <form method="get" asp-page="Index" id="filterForm">
+            <div class="filter-box shadow-sm">
+
+                <!-- 🏢 Abteilung -->
+                <select id="filterAbteilung"
+                        name="SelectedFolder"
+                        class="form-select filter-item"
+                        onchange="this.form.submit()">
+                    <option value="">🏢 Alle Abteilungen</option>
+
+                    @foreach (var abt in Model.AlleAbteilungen
+                                        .Where(a => Model.DokumentListe.Any(d => d.Abteilung?.Name == a.Name))
+                                        .OrderBy(a => a.Name))
+                    {
+                        if (abt.Name == Model.SelectedFolder)
+                        {
+                            <option value="@abt.Name" selected="selected">@abt.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@abt.Name">@abt.Name</option>
+                        }
+                    }
+                </select>
+
+
+                <!-- 📂 Kategorie -->
+                <select id="filterKategorie"
+                        name="Kategorie"
+                        class="form-select filter-item"
+                        onchange="this.form.submit()">
+                    <option value="">📂 Alle Kategorien</option>
+
+                    @foreach (var cat in Model.AlleKategorien.OrderBy(c => c))
+                    {
+                        if (cat == Model.Kategorie)
+                        {
+                            <option value="@cat" selected="selected">@cat</option>
+                        }
+                        else
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    }
+                </select>
+
+
+                <!-- 📅 Von -->
+                <input type="date"
+                       id="filterStartDate"
+                       name="Von"
+                       value="@(Model.Von.HasValue? Model.Von.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control filter-item"
+                       onchange="this.form.submit()" />
+
+                <!-- 📅 Bis -->
+                <input type="date"
+                       id="filterEndDate"
+                       name="Bis"
+                       value="@(Model.Bis.HasValue? Model.Bis.Value.ToString("yyyy-MM-dd") : "")"
+                       class="form-control filter-item"
+                       onchange="this.form.submit()" />
+
+                <!-- Reset -->
+                <a asp-page="Index"
+                   asp-route-SelectedFolder=""
+                   asp-route-Kategorie=""
+                   asp-route-Von=""
+                   asp-route-Bis=""
+                   class="btn btn-secondary filter-item">
+                    ♻️ Reset
+                </a>
+
+                <!-- ✅ Explorer öffnen Button -->
+                <button type="button" class="btn btn-outline-dark filter-item" onclick="openExplorerPopup()">
+                    📂 Explorer öffnen
+                </button>
+            </div>
+        </form>
+
+
+        <!-- ✅ Tabellenkopf mit Export & Logs -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+            <!-- Export-Schaltflächen -->
+            <div class="d-flex gap-2 export-buttons">
+                <a asp-page-handler="ExportCsv" class="btn btn-sm btn-outline-light fw-semibold">
+                    <i class="bi bi-filetype-csv"></i> CSV
+                </a>
+                <a asp-page-handler="ExportExcel" class="btn btn-sm btn-outline-success fw-semibold">
+                    <i class="bi bi-file-earmark-excel"></i> Excel
+                </a>
+                <a asp-page-handler="ExportPdf" class="btn btn-sm btn-outline-danger fw-semibold" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+            </div>
+
+            <!-- 🔍 Alle Logs anzeigen -->
+            <div>
+                <button class="btn btn-outline-dark btn-sm fw-semibold" onclick="openAllAuditLogs()">
+                    📋 Alle Dokument-Logs anzeigen
+                </button>
+            </div>
+        </div>
+
+        <!-- 📜 Modal: Vollständige Dokument-Historie -->
+        <div class="modal fade" id="allAuditModal" tabindex="-1" aria-labelledby="allAuditModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content bg-white shadow-lg rounded-3">
+
+                    <!-- 🔹 Modal Header -->
+                    <div class="modal-header d-flex align-items-center border-bottom">
+                        <h5 class="modal-title me-auto text-info fw-bold" id="allAuditModalLabel">
+                            📜 Vollständige Dokument-Historie
+                        </h5>
+
+                        <div class="btn-group me-2">
+                            <button class="btn btn-sm btn-outline-info" onclick="exportHistoryPdf()">
+                                <i class="bi bi-file-earmark-pdf"></i> PDF
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-light dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                Teilen
+                            </button>
+
+                            <ul class="dropdown-menu dropdown-menu-end bg-white shadow">
+                                <li><a class="dropdown-item" href="#" onclick="shareByEmail()">✉️ E-Mail</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="shareGoogleDrive()">🟦 Google Drive</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="shareToERP()">🏢 ERP</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="shareToSAP()">🔧 SAP</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="shareToLexware()">💼 Lexware</a></li>
+                            </ul>
+                        </div>
+
+                        <button type="button"
+                                class="btn-close ms-1"
+                                data-bs-dismiss="modal"
+                                aria-label="Close">
+                        </button>
+                    </div>
+
+                    <!-- 🔹 Modal Body -->
+                    <div class="modal-body">
+                        <div id="allAuditContent" class="small">
+                            <div class="text-center text-muted">⏳ Wird geladen...</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        </div> <!-- End modern container -->
+
+
+        <!-- ============================= -->
+        <!-- 🌌 Explorer Popup             -->
+        <!-- ============================= -->
+        <div id="explorerPopup" class="explorer-popup-overlay d-none">
+
+            <div class="explorer-popup-window shadow-lg">
+
+                <!-- 🔹 Explorer Kopfbereich (Redesigned) -->
+                <div class="explorer-global-header d-flex justify-content-between align-items-center p-3" 
+                     style="background: #ffffff; border-bottom: 1px solid #e0e0e0; border-radius: 16px 16px 0 0;">
+
+                    <!-- 🔸 Linker Block: Firma & Benutzer -->
+                    <div class="d-flex align-items-center gap-4 flex-wrap">
+
+                        <!-- 🏢 Firmenname -->
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-building text-primary fs-5"></i>
+                            </div>
+                            <span class="fw-bold fs-5 text-dark">@Model.FirmaName</span>
+                        </div>
+
+                        <!-- 👤 Benutzerinfo mit Fallback -->
+                        <div class="d-flex align-items-center gap-3 border-start ps-3" style="border-color: #eee !important;">
+                            
+                            <!-- Profilbild-Container -->
+                            <div class="position-relative" style="width: 48px; height: 48px;">
+                                <!-- Fallback (Initials) -->
+                                <div class="position-absolute top-0 start-0 w-100 h-100 rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-5">
+                                    @(!string.IsNullOrEmpty(Model.FullName) ? Model.FullName[0].ToString().ToUpper() : "U")
+                                </div>
+                                <!-- Bild (Overlay) -->
+                                <img src="@Model.ProfilbildUrl"
+                                     alt="@Model.FullName"
+                                     class="position-absolute top-0 start-0 w-100 h-100 rounded-circle border shadow-sm"
+                                     style="object-fit: cover; background-color: #fff;"
+                                     onerror="this.style.display='none'" />
+                            </div>
+
+                            <!-- Benutzerdaten -->
+                            <div class="d-flex flex-column lh-sm">
+                                <span class="fw-bold text-dark">@Model.FullName</span>
+                                <div class="d-flex align-items-center gap-2 text-muted small">
+                                    <span>🏢 @Model.AbteilungName</span>
+                                    <span>•</span>
+                                    <span>@Model.UserRoles</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 📂 Label -->
+                        <div class="d-flex align-items-center gap-2 ms-4 text-secondary">
+                            <i class="bi bi-folder2-open fs-4"></i>
+                            <span class="fw-semibold fs-5">Dokumentenverwaltung</span>
+                        </div>
+                    </div>
+
+                    <!-- ❌ Schließen -->
+                    <button class="btn btn-sm btn-light border shadow-sm rounded-circle d-flex align-items-center justify-content-center" 
+                            style="width: 36px; height: 36px;"
+                            onclick="closeExplorerPopup()">
+                        <i class="bi bi-x-lg text-secondary"></i>
+                    </button>
+                </div>
+
+                <!-- 🔹 Explorer-Inhalt -->
+                <div class="explorer-popup-body p-3 rounded-bottom" style="background-color: #f8f9fa;">
+                    <div id="explorerContainer" class="explorer-sandbox explorer-expanded shadow-sm" style="background: white; border-radius: 12px; padding: 16px;">
+
+                        <!-- 🔹 Aktionen -->
+                        <div class="d-flex gap-2 flex-wrap mb-3 explorer-btn-row">
+                            <button class="btn btn-sm btn-primary shadow-sm fw-semibold" onclick="promptNewFolder()" style="background-color: #1e88e5; border: none;">
+                                <i class="bi bi-folder-plus"></i> Neuer Ordner
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary shadow-sm fw-semibold" onclick="toggleAllExplorer(true)">
+                                <i class="bi bi-folder2-open"></i> Alle öffnen
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary shadow-sm fw-semibold" onclick="toggleAllExplorer(false)">
+                                <i class="bi bi-folder2"></i> Alle schließen
+                            </button>
+                        </div>
+
+                        <!-- 🔍 Suchfeld -->
+                        <form method="post" asp-page-handler="CreateExplorer" class="d-flex gap-2 mb-3">
+                            <input class="form-control form-control-sm shadow-sm explorer-search-input"
+                                   type="text"
+                                   placeholder="🔍 Nach Datei oder Ordner suchen..."
+                                   onkeyup="filterFiles(this)">
+                        </form>
+
+                        <!-- 🌲 Baumstruktur -->
+                        <ul class="list-unstyled explorer-tree-zone" style="color: #2c3e50;">
+                            @if (Model.ExplorerTree?.Any() == true)
+                            {
+                                foreach (var folder in Model.ExplorerTree)
+                                {
+                                    @Html.Partial("_FolderTree", folder)
+                                }
+                            }
+                            else
+                            {
+                                <li class="text-muted">📂 Keine Dateien oder Ordner gefunden</li>
+                            }
+                        </ul>
+                    </div>
+                </div> <!-- Ende Explorer Body -->
+            </div>
+        </div> <!-- Ende Explorer Popup -->
+
+
+<!-- 📊 Tableau -->
+<div class="table-container" style="background: white; border-radius: 1.1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 2.5rem 2rem; margin: 2rem 0;">
+
+    <!-- 💾 Table responsive -->
+    <div class="table-responsive">
+        <table class="modern-table table-hover align-middle mb-0" id="dokumenteTable">
+            <thead>
+                <tr>
+                    <th class="fw-semibold">📄 Dateiname</th>
+                    <th class="fw-semibold">🏢 Abteilung</th>
+                    <th class="fw-semibold">📂 Kategorie</th>
+                    <th class="fw-semibold">👤 Benutzer</th>
+                    <th class="fw-semibold">📅 Hochgeladen am</th>
+                    <th class="text-center fw-semibold">⚙️ Aktionen</th>
+                    <th class="fw-semibold">📌 Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.DokumentListe?.Any() == true)
+                {
+                    <tr class="table-section-row">
+                        <td colspan="7">📄 Gefilterte Dokumente</td>
+                    </tr>
+                    @for (int i = 0; i < Model.DokumentListe.Count; i++)
+                    {
+                        @Html.Partial("Dokument/_DokumentTableRow", Model.DokumentListe[i])
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-muted text-center py-3">
+                            ⚠️ Keine Dokumente gefunden
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.TotalCount > Model.PageSize)
+{
+    <nav>
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link"
+                       asp-page="Index"
+                       asp-route-pageNumber="@i"
+                       asp-route-SelectedFolder="@Model.SelectedFolder"
+                       asp-route-Kategorie="@Model.Kategorie"
+                       asp-route-Von="@(Model.Von?.ToString("yyyy-MM-dd"))"
+                       asp-route-Bis="@(Model.Bis?.ToString("yyyy-MM-dd"))">
+                        @i
+                    </a>
+
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+
+</div> <!-- End content-wrapper -->
+
+
+
+<!-- 📥 Modal: Wohin einfügen -->
+<div class="modal fade" id="pasteFileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-white shadow-lg">
+
+            <!-- 🔹 Modal Header -->
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-info fw-bold">📂 Wohin einfügen?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- 🔹 Modal Body -->
+            <div class="modal-body">
+
+                <!-- 🏢 Abteilung -->
+                <label for="pasteAbteilung" class="form-label">Abteilung auswählen:</label>
+                <select id="pasteAbteilung" class="form-select">
+                    <option value="">-- Alle Abteilungen --</option>
+                    @foreach (var folder in Model.ExplorerTree.Where(f => f.IsAbteilung))
+                    {
+                        var subCats = folder.SubFolders.Select(s => s.Name).OrderBy(n => n).ToList();
+                        var jsonCats = System.Text.Json.JsonSerializer.Serialize(subCats);
+                        <option value="@folder.Name" data-categories='@jsonCats'>@folder.Name</option>
+                    }
+                </select>
+
+                <!-- 📂 Kategorie -->
+                <label for="pasteKategorie" class="form-label mt-3">Kategorie auswählen:</label>
+                <select id="pasteKategorie" class="form-select">
+                    <option value="">-- Kategorie wählen --</option>
+                    <option value="__new__">➕ Neue Kategorie hinzufügen...</option>
+                </select>
+
+                <!-- ➕ Input neue Kategorie (versteckt initial) -->
+                <input type="text"
+                       id="newKategorieInput"
+                       class="form-control mt-2 d-none"
+                       placeholder="Neue Kategorie eingeben..." />
+            </div>
+
+            <!-- 🔹 Modal Footer -->
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Abbrechen</button>
+                <button type="button" class="btn btn-primary" onclick="confirmPasteFile()">✅ Einfügen</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<!-- 📂 Kontextmenü für Ordner -->
+<div id="folderContextMenu" class="context-menu d-none"
+     style="position: absolute; background: white; color: #000; z-index: 9999; border-radius: 6px; min-width: 160px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+    <ul class="list-unstyled mb-0">
+        <li onclick="renameFolder()" style="padding: 0.5rem 1rem; cursor: pointer; color: black !important;">✏️ Umbenennen</li>
+        <li onclick="deleteFolder(this)" style="padding: 0.5rem 1rem; cursor: pointer; color: red !important;">🗑️ Löschen</li>
+        <li onclick="CopyFolderDialog(contextFolderPath)" style="padding: 0.5rem 1rem; cursor: pointer; color: black !important;">📄 Kopieren</li>
+        <li><hr class="dropdown-divider"></li>
+        <li id="pasteFileItem" onclick="pasteFileToFolder()" style="padding: 0.5rem 1rem; cursor: pointer; display: none; color: black !important;">📥 Hier einfügen</li>
+        <li id="moveFileItem" onclick="moveFileToFolder()" style="padding: 0.5rem 1rem; cursor: pointer; display: none; color: black !important;">📦 Hier verschieben</li>
+    </ul>
+</div>
+
+<div id="copyFolderModal" class="modal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.4); position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:99999; justify-content:center; align-items:center;">
+    <div style="background: white; color: #000; border-radius: 8px; padding: 2rem; min-width: 300px; max-width: 90vw; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+        <h4>📄 Ordner kopieren</h4>
+        <label for="targetFolderSelect">Wohin kopieren?</label>
+        <select id="targetFolderSelect" style="width:100%; margin-bottom:1rem;">
+            @foreach (var folder in Model.FolderListe)
+            {
+                <option value="@folder.FullPath">@folder.FullPath</option>
+            }
+        </select>
+        <label for="copyFolderName">Neuer Ordnername</label>
+        <input id="copyFolderName" type="text" placeholder="z.B. Archiv_kopie" style="width:100%; margin-bottom:1rem;">
+        <div style="display:flex; gap:1rem;">
+            <button onclick="doCopyFolder()" class="btn btn-primary">OK</button>
+            <button onclick="closeCopyDialog()" class="btn btn-secondary">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- 🎯 Kontextmenü -->
+<div id="customContextMenu" class="context-menu d-none" style="position: absolute; background: white; color: #000; z-index: 9999; border-radius: 6px; min-width: 200px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+    <ul class="list-unstyled mb-0">
+        <!-- 🟦 Affichage / actions directes -->
+        <li onclick="openPreview('${filePath}', '${sasUrl}'); logAuditAction('${id}', 'Dokument in Vorschau geöffnet')"
+            style="padding: 0.5rem 1rem; cursor: pointer;">
+            📄 Anzeigen
+        </li>
+
+
+
+        <li onclick="downloadFile()" style="padding: 0.5rem 1rem; cursor: pointer;">📥 Download</li>
+        <li onclick="redirectToEdit(currentFileId)" style="padding: 0.5rem 1rem; cursor: pointer;">✏️ Bearbeiten</li>
+        <li onclick="redirectToVersionen(currentFileId)" style="padding: 0.5rem 1rem; cursor: pointer;">📚 Versionen</li>
+        <li onclick="openAuditModal(currentFileId)" style="padding: 0.5rem 1rem; cursor: pointer;">🕓 Historie</li>
+        <li onclick="showMetadataModal()" style="padding: 0.5rem 1rem; cursor: pointer;">ℹ️ Metadaten</li>
+
+        <hr class="dropdown-divider my-1" />
+
+        <!-- 🔧 Actions dynamiques -->
+        <li onclick="renameFile()" style="padding: 0.5rem 1rem; cursor: pointer;">✏️ Umbenennen</li>
+        <li onclick="copyFileWithPrompt(rightClickedPath)" style="padding: 0.5rem 1rem; cursor: pointer;">
+            📄 Kopieren
+        </li>
+
+        <li onclick="prepareMoveFileWithPrompt('${filePath}')">✂️ Ausschneiden</li>
+
+        <li onclick="archiveFile()" style="padding: 0.5rem 1rem; cursor: pointer;">📦 Archivieren</li>
+        <li onclick="deleteFile()" style="padding: 0.5rem 1rem; cursor: pointer; color: red;">🗑️ Löschen</li>
+        <li onclick="copyPath()" style="padding: 0.5rem 1rem; cursor: pointer;">📋 Pfad kopieren</li>
+        <li onclick="showProperties()" style="padding: 0.5rem 1rem; cursor: pointer;">ℹ️ Eigenschaften</li>
+    </ul>
+</div>
+
+
+
+
+<div class="modal fade" id="auditModal" tabindex="-1" aria-labelledby="auditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content bg-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="auditModalLabel">📜 Hostorie </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body" id="auditLogContainer">
+                <p class="text-muted">⏳ Chargement...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="shareModalLabel">
+                    <i class="bi bi-share-fill text-info"></i> Dokument teilen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body pb-0">
+                <div class="mb-3">
+                    <input type="text" id="shareUserSearch" class="form-control bg-secondary text-light border-0"
+                           placeholder="Benutzer suchen...">
+                </div>
+                <div id="shareUserList" class="mb-3" style="max-height:250px;overflow:auto;"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-info" onclick="submitShare()">
+                    <i class="bi bi-send"></i> Teilen
+                </button>
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Schließen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<form id="commentForm">@Html.AntiForgeryToken()</form>
+<div class="modal fade" id="commentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title">📝 Kommentar / Historie</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="commentHistory">Lädt...</div>
+                <textarea id="newComment" class="form-control mt-2" placeholder="Neuer Kommentar…"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="saveComment()">Speichern</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="signatureRequestModal" tabindex="-1" aria-labelledby="signatureRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title" id="signatureRequestModalLabel">✍️ Unterschrift anfragen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Wähle die Benutzer, die dieses Dokument unterschreiben sollen:</p>
+                <div id="signature-user-list">
+                    <!-- Nutzerliste wird dynamisch geladen -->
+                    <div class="text-muted">⏳ Lade Benutzer...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" onclick="submitSignatureRequest()">Anfrage senden</button>
+            </div>
+        </div>
+    </div>
+</div>
+@functions {
+    string GetStatusBadgeClass(DmsProjeckt.Data.DokumentStatus status) => status switch
+    {
+        DmsProjeckt.Data.DokumentStatus.Neu => "bg-secondary",
+        DmsProjeckt.Data.DokumentStatus.InBearbeitung => "bg-warning text-dark",
+        DmsProjeckt.Data.DokumentStatus.Fertig => "bg-success",
+        DmsProjeckt.Data.DokumentStatus.Fehlerhaft => "bg-danger",
+        _ => "bg-dark"
+    };
+}
+@{
+    var firmaName = Model?.Firma?.ToLower() ?? "meinefirma";
+}
+
+@section Scripts {
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    <script>
+           let draggedFilePath = "";
+           let rightClickedPath = "";
+           let copiedFilePath = "";
+          let currentDokumentId = null;
+           let signedDownloadUrl = null;
+             const firma = "@Model.Firma".toLowerCase();
+              let currentFileId = null;
+              let currentSignatureFileId = null;
+
+               function selectFolder(path) {
+               const url = new URL(window.location.href);
+               url.searchParams.set("SelectedFolder", path);
+               window.location.href = url.toString();
+           }
+                function toggleFolder(id) {
+               const element = document.getElementById("files-" + id);
+               if (!element) return;
+
+               element.classList.toggle("show");
+           }
+
+                           function showFileContextMenu(event, filePath, sasUrl = '') {
+                       event.preventDefault();
+                       event.stopPropagation();
+
+                       rightClickedPath = filePath;
+                                          if (sasUrl.startsWith("gs://")) {
+
+                           const path = sasUrl.replace(/^gs:\/\/[^/]+\//, "");
+
+
+                           const storage = getStorage();
+                           const fileRef = ref(storage, path);
+
+
+                           getDownloadURL(fileRef).then((url) => {
+                               signedDownloadUrl = url;
+                               console.log("✅ Firebase URL:", signedDownloadUrl);
+                           }).catch((err) => {
+                               console.error("❌ Fehler getDownloadURL:", err);
+                               signedDownloadUrl = "";
+                           });
+                       } else {
+                           signedDownloadUrl = sasUrl;
+                       }
+
+                       const menu = document.getElementById("customContextMenu");
+
+                       const top = event.clientY || (event.currentTarget.getBoundingClientRect().bottom + window.scrollY);
+                       const left = event.clientX || (event.currentTarget.getBoundingClientRect().left + window.scrollX);
+
+                       menu.style.top = `${top}px`;
+                       menu.style.left = `${left}px`;
+                       menu.classList.remove("d-none");
+
+                       console.log("📄 Kontextmenü für:", rightClickedPath);
+                   }
+
+
+           // 📜 3 Punkte Drück
+                     function onFileOptionsClick(event, path, sasUrl) {
+               event.preventDefault();
+               event.stopPropagation();
+               rightClickedPath = path;
+               signedDownloadUrl = sasUrl;
+
+               const menu = document.getElementById("customContextMenu");
+               menu.style.top = `${event.currentTarget.getBoundingClientRect().bottom + window.scrollY}px`;
+               menu.style.left = `${event.currentTarget.getBoundingClientRect().left + window.scrollX}px`;
+               menu.classList.remove("d-none");
+
+               console.log("🖱️ Rechtsklick:", path);
+           }
+
+             function openCommentModal(docId, fname) {
+                        currentDocId = docId;
+                        fetch(`?handler=GetComments&docId=${docId}`)
+                            .then(r => r.json())
+                            .then(j => {
+                                document.getElementById("commentHistory").innerHTML = j.html;
+                                const modal = new bootstrap.Modal(document.getElementById('commentModal'));
+                                modal.show();
+                            });
+                    }
+
+                    function saveComment() {
+                        const txt = document.getElementById("newComment").value;
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                        fetch(`?handler=AddComment`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'RequestVerificationToken': token
+                            },
+                            body: `dokumentId=${encodeURIComponent(currentDocId)}&text=${encodeURIComponent(txt)}`
+                        }).then(r => {
+                            if (r.ok) {
+                                document.getElementById("newComment").value = "";
+                                openCommentModal(currentDocId);
+                            } else {
+                                alert("Fehler beim Speichern");
+                            }
+                        });
+                    }
+
+                        document.addEventListener("click", (event) => {
+
+               const isInsideFolder = event.target.closest('.folder-label');
+               const isContextMenu = event.target.closest('#customContextMenu') || event.target.closest('#folderContextMenu');
+
+               if (!isInsideFolder && !isContextMenu) {
+                   document.getElementById("customContextMenu")?.classList.add("d-none");
+                   document.getElementById("folderContextMenu")?.classList.add("d-none");
+               }
+           });
+
+
+                             function archiveFile() {
+              if (!rightClickedPath) return;
+
+              Swal.fire({
+                  title: '📦 Dokument archivieren?',
+                  text: 'Das Dokument wird in den Archiv-Ordner verschoben (in derselben Abteilung).',
+                  icon: 'question',
+                  showCancelButton: true,
+                  confirmButtonText: 'Archivieren',
+                  cancelButtonText: 'Abbrechen'
+              }).then(result => {
+                  if (!result.isConfirmed) return;
+
+                  // Nur relativer Pfad (bereinigen)
+                  const cleanedSource = rightClickedPath.replace(/^https:\/\/[^\/]+\/(dokumente\/)?/, 'dokumente/');
+
+                  fetch('?handler=ArchiveFile', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          Source: cleanedSource // 👉 Nur Source, ArchivPath wird serverseitig berechnet
+                      })
+                  })
+                  .then(async res => {
+                      let text = await res.text();
+                      console.log("Antwort vom Server:", text); // Debug
+                      try {
+                          let json = JSON.parse(text);
+                          if (json.success) {
+                              Swal.fire('✅ Archiviert!', '', 'success').then(() => location.reload());
+                          } else {
+                              Swal.fire('❌ Fehler', json.message || 'Archivierung fehlgeschlagen', 'error');
+                          }
+                      } catch(e) {
+                          Swal.fire('❌ Fehler', 'Antwort ist kein gültiges JSON:<br><pre>' + text + '</pre>', 'error');
+                      }
+                  })
+                  .catch(err => {
+                      Swal.fire('❌ Fehler', err.message, 'error');
+                  });
+
+                  console.log("Archivieren für Pfad:", cleanedSource);
+
+                  closeAllContextMenus();
+              });
+          }
+
+                 function downloadFile() {
+               if (!signedDownloadUrl) return;
+               Swal.fire({
+                   title: '📥 Datei herunterladen',
+                   html: `
+                       <div class="text-start">
+                           <label class="form-label">📄 Lien :</label>
+                           <div class="input-group">
+                               <input type="text" id="dl-link" class="form-control" value="${signedDownloadUrl}" readonly>
+                               <button class="btn btn-outline-secondary" onclick="copyDownloadUrl()">
+                                   <i class="bi bi-clipboard"></i>
+                               </button>
+                           </div>
+                           <a href="${signedDownloadUrl}" target="_blank" class="btn btn-success mt-3">
+                               <i class="bi bi-download"></i>  Herunterladen
+                       </div>`,
+                   showConfirmButton: false,
+                   width: 600
+               });
+               closeAllContextMenus();
+           }
+
+
+           function copyDownloadUrl() {
+               const input = document.getElementById('dl-link');
+               input.select();
+               document.execCommand('copy');
+               Swal.fire({ toast: true, icon: 'success', title: '📋 Kopiert!', timer: 1000, position: 'top-end', showConfirmButton: false });
+           }
+
+                           function renameFile() {
+                       if (!rightClickedPath) return;
+
+                       const fullPath = rightClickedPath;
+                       const currentName = fullPath.split("/").pop();
+                       const extension = currentName.includes('.') ? '.' + currentName.split('.').pop() : '';
+                       const folderPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+
+                       Swal.fire({
+                           title: '✏️ Datei umbenennen',
+                           html: `
+                             <input id="swal-input1" class="swal2-input" placeholder="Neuer Name..." value="${currentName.replace(extension, '')}">
+                             <input id="swal-input2" class="swal2-input" placeholder="Passwort" type="password">
+                           `,
+                           focusConfirm: false,
+                           showCancelButton: true,
+                           confirmButtonText: 'Umbenennen',
+                           cancelButtonText: 'Abbrechen',
+                           preConfirm: () => {
+                               const newName = document.getElementById('swal-input1').value.trim();
+                               const passwort = document.getElementById('swal-input2').value;
+                               if (!newName) return Swal.showValidationMessage('Name erforderlich');
+                               if (/[<>:"\/\\|?*]/.test(newName)) return Swal.showValidationMessage('Ungültige Zeichen im Namen');
+                               if (newName.toLowerCase() === ".init") return Swal.showValidationMessage('Name ".init" ist reserviert');
+                               if (!passwort) return Swal.showValidationMessage('Passwort erforderlich');
+                               return { newName, passwort };
+                           }
+                       }).then(result => {
+                           if (!result.isConfirmed) return;
+
+                           let newName = result.value.newName;
+                           let passwort = result.value.passwort;
+                           if (!newName.includes('.')) newName += extension;
+
+                           const cleanedSource = fullPath.replace(/^https:\/\/[^\/]+\/dokumente\//, 'dokumente/');
+                           const cleanedFolder = folderPath.replace(/^https:\/\/[^\/]+\/dokumente\//, 'dokumente/');
+                           const cleanedTarget = `${cleanedFolder}/${newName}`.replace(/\/+/g, '/');
+
+                           fetch('?handler=RenameFile', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({
+                                   SourcePath: cleanedSource,
+                                   TargetPath: cleanedTarget,
+                                   Passwort: passwort
+                               })
+                           })
+                           .then(res => res.text())
+                           .then(txt => {
+                               try {
+                                   const json = JSON.parse(txt);
+                                   if (json.success) {
+                                       Swal.fire('✅ Erfolgreich umbenannt', '', 'success').then(() => location.reload());
+                                   } else {
+                                       Swal.fire('❌ Fehler beim Umbenennen', json.message || '', 'error');
+                                   }
+                               } catch (e) {
+                                   Swal.fire('❌ Antwortfehler', 'Antwort ist kein gültiges JSON.', 'error');
+                                   console.error("🔍 Server returned:", txt);
+                               }
+                           })
+                           .catch(err => {
+                               Swal.fire('❌ Technischer Fehler', err.message, 'error');
+                           });
+
+                           closeAllContextMenus();
+                       });
+                   }
+
+
+           function copyPath() {
+               navigator.clipboard.writeText(rightClickedPath)
+                   .then(() => Swal.fire({ toast: true, icon: 'success', title: '📋 Kopiert', timer: 1000, position: 'top-end', showConfirmButton: false }));
+           closeAllContextMenus();
+
+           }
+
+           // ℹ️ Propriétés Azure
+
+           function showProperties() {
+               if (!rightClickedPath) return;
+
+               fetch('/Dokument?handler=GetBlobProperties', {
+                   method: "POST",
+                   headers: { "Content-Type": "application/json" },
+                   body: JSON.stringify({ source: rightClickedPath })
+               })
+                   .then(res => {
+                       if (!res.ok) throw new Error("⛔ Erreur HTTP " + res.status);
+                       return res.json();
+                   })
+                   .then(data => {
+                       if (!data.success) throw new Error(data.message || "Erreur inconnue");
+
+                       const p = data.properties;
+
+                              Swal.fire({
+               title: '📄 Firebase Storage-Eigenschaften',
+               html: `
+                   <table class="table table-bordered text-start small">
+                       <tr><th>Name</th><td>${p.nom ?? ''}</td></tr>
+                       <tr><th>Größe</th><td>${p.taille ?? ''}</td></tr>
+                       <tr><th>Typ</th><td>${p.type ?? ''}</td></tr>
+                       <tr><th>Erstellt</th><td>${p.créé ?? ''}</td></tr>
+                       <tr><th>Geändert</th><td>${p.modifié ?? ''}</td></tr>
+                       <tr><th>Stufe</th><td>${p.accessTier ?? ''}</td></tr>
+                       <tr><th>Link</th><td><a href="${p.lien}" target="_blank">${p.lien}</a></td></tr>
+                   </table>
+                   <div class="text-center mt-3">
+                       <button class="btn btn-outline-primary" onclick="openMetadataForPath('${rightClickedPath}')">
+                           📄 Zeige SQL-Metadaten
+                       </button>
+                   </div>`,
+               icon: 'info',
+               width: 700
+           });
+
+                   })
+                   .catch(err => {
+                       console.error("❌ Erreur JS : ", err);
+                       Swal.fire('❌ Erreur', err.message, 'error');
+                   });
+                           function formatDate(dateStr) {
+               try {
+                   const date = new Date(dateStr);
+                   return date.toLocaleString("de-DE"); // ou "de-DE"
+               } catch {
+                   return dateStr ?? '';
+               }
+           }
+
+               closeAllContextMenus();
+           }
+
+
+           function deleteFile() {
+               if (!rightClickedPath) return;
+
+               const fileName = rightClickedPath.split('/').pop();
+
+               Swal.fire({
+                   title: '🗑️ Datei wirklich löschen?',
+                   html: `Möchtest du die Datei <b>${fileName}</b> wirklich unwiderruflich löschen?`,
+                   icon: 'warning',
+                   showCancelButton: true,
+                   confirmButtonColor: '#d33',
+                   cancelButtonColor: '#3085d6',
+                   confirmButtonText: 'Ja, löschen',
+                   cancelButtonText: 'Abbrechen'
+               }).then(result => {
+                   if (!result.isConfirmed) return;
+
+                   fetch('?handler=DeleteFile', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({ source: rightClickedPath })
+                   })
+                   .then(res => res.json())
+                   .then(json => {
+                       if (json.success) {
+
+                           // ✅ Feedback FIRST (before potential crashes)
+                           Swal.fire({
+                               toast: true,
+                               icon: 'success',
+                               title: '✅ Datei gelöscht',
+                               text: `${fileName} wurde entfernt.`,
+                               timer: 2000,
+                               showConfirmButton: false,
+                               position: 'top-end'
+                           });
+
+                           // Sound effect (Safe wrap)
+                           try {
+                                const deleteSound = new Audio("data:audio/mp3;base64://uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA...");
+                                deleteSound.volume = 0.35;
+                                deleteSound.play().catch(() => {});
+                           } catch (e) { console.warn("Audio play failed", e); }
+
+
+                           let fileRow = document.querySelector(`tr[data-path="${rightClickedPath}"]`);
+                           if (!fileRow) {
+                               const allRows = Array.from(document.querySelectorAll("tr[data-path]"));
+                               fileRow = allRows.find(r =>
+                                   rightClickedPath.includes(r.dataset.path) ||
+                                   r.dataset.path.includes(rightClickedPath) ||
+                                   r.dataset.path.replace("chunked://", "").includes(rightClickedPath.replace("chunked://", ""))
+                               );
+                           }
+
+                           if (fileRow) {
+                               fileRow.style.transition = "opacity 0.4s";
+                               fileRow.style.opacity = "0";
+                               setTimeout(() => fileRow.remove(), 400);
+                           }
+
+                           let explorerRow = document.querySelector(`.folder-content tr[data-path="${rightClickedPath}"]`);
+                           if (!explorerRow) {
+                               const allExplorerRows = Array.from(document.querySelectorAll(".folder-content tr[data-path]"));
+                               explorerRow = allExplorerRows.find(r =>
+                                   rightClickedPath.includes(r.dataset.path) ||
+                                   r.dataset.path.includes(rightClickedPath) ||
+                                   r.dataset.path.replace("chunked://", "").includes(rightClickedPath.replace("chunked://", ""))
+                               );
+                           }
+
+                           if (explorerRow) {
+                               const parentFolder = explorerRow.closest(".folder-content");
+                               explorerRow.style.transition = "opacity 0.4s";
+                               explorerRow.style.opacity = "0";
+
+                               setTimeout(() => {
+                                   explorerRow.remove();
+                                   if (parentFolder && parentFolder.querySelectorAll("tr").length === 0) {
+                                       const emptyRow = document.createElement("tr");
+                                       emptyRow.innerHTML = `
+                                           <td colspan="5" class="text-muted small fst-italic">
+                                               (Keine Dateien)
+                                           </td>`;
+                                       parentFolder.querySelector("table tbody").appendChild(emptyRow);
+                                   }
+                               }, 400);
+                           }
+
+                           setTimeout(() => {
+                               location.reload();
+                           }, 2000);
+
+                       } else {
+                           Swal.fire({
+                               icon: 'error',
+                               title: '❌ Fehler beim Löschen',
+                               text: json.message || ''
+                           });
+                       }
+                   })
+                   .catch(err => {
+                       Swal.fire({
+                           icon: 'error',
+                           title: '❌ Fehler',
+                           text: err.message
+                       });
+                   });
+
+                   closeAllContextMenus();
+               });
+           }
+
+
+
+
+           // Diese Funktion könntest du für den Link in der Fehlermeldung nutzen:
+           function openVersionenForFile() {
+               if (!rightClickedPath) return;
+               // Du brauchst evtl. die ID des Dokuments, nicht den Pfad!
+               // window.location.href = '/Dokument/Versionen?dokumentId=' + encodeURIComponent(DOKUMENT_ID_HIER);
+           }
+
+
+
+           // Drag & Drop
+           function onDragStartFile(event, path) {
+               draggedFilePath = path;
+               event.dataTransfer.effectAllowed = "move";
+           }
+
+           function onDropFolder(event, targetFolderPath) {
+               event.preventDefault();
+               const fileName = draggedFilePath.split('/').pop();
+               const targetPath = `${targetFolderPath}/${fileName}`;
+
+               fetch('/Dokument/MoveFile', {
+                   method: "POST",
+                   headers: { "Content-Type": "application/json" },
+                   body: JSON.stringify({ source: draggedFilePath, target: targetPath })
+               }).then(res => {
+                   if (res.ok) location.reload();
+                   else Swal.fire('❌ Fehler zu verschiben', '', 'error');
+               });
+           }
+
+                 function copyFilePath() {
+             sessionStorage.setItem("copiedFilePath", rightClickedPath);
+             sessionStorage.setItem("moveMode", "false");
+             copiedFilePath = rightClickedPath;
+             Swal.fire({
+               toast: true,
+               icon: 'info',
+               title: '📄 Datei kopiert',
+               timer: 1000,
+               showConfirmButton: false,
+               position: 'top-end'
+             });
+             closeAllContextMenus();
+           }
+
+           // Métadonnées SQL
+           function openMetadataForPath(path) {
+               Swal.close();
+               const btn = document.querySelector(`[data-meta-path="${path}"]`);
+               if (btn) {
+                   setTimeout(() => btn.click(), 400);
+               } else {
+                   Swal.fire('❌ Metadaten nicht gefunden', 'Kein passender Button vorhanden.', 'error');
+               }
+           }
+
+           // Suchen Live
+           function filterFiles(input) {
+               const query = input.value.toLowerCase();
+               document.querySelectorAll('.file-node').forEach(file => {
+                   const text = file.querySelector('.file-name-text')?.textContent?.toLowerCase() || "";
+                   file.style.display = text.includes(query) ? '' : 'none';
+               });
+           }
+
+
+          function loadMetadata(btn) {
+          let std = {};
+          let index = {};
+          let user = [];
+
+          try { std = JSON.parse(atob(btn.getAttribute("data-meta") || "")); } catch { std = {}; }
+          try { index = JSON.parse(atob(btn.getAttribute("data-index-meta") || "")); } catch { index = {}; }
+          try { user = JSON.parse(atob(btn.getAttribute("data-user-meta") || "")); } catch { user = []; }
+
+          console.log("📊 Geladene Metadaten:", { std, index, user });
+
+              const htmlSections = [];
+
+              if (Object.keys(std).length) {
+                  htmlSections.push(`<tr class="table-secondary"><th colspan="2">📄 Dokumentdaten</th></tr>`);
+                  for (const [key, val] of Object.entries(std)) {
+                      htmlSections.push(`<tr><th>${key}</th><td>${val ?? ""}</td></tr>`);
+                  }
+              }
+
+              if (Object.keys(index).length) {
+                  htmlSections.push(`<tr class="table-secondary"><th colspan="2">🔍 Indexierte Daten</th></tr>`);
+                  for (const [key, val] of Object.entries(index)) {
+                      htmlSections.push(`<tr><th>${key}</th><td>${val ?? ""}</td></tr>`);
+                  }
+              }
+
+              if (Array.isArray(user) && user.length) {
+                  htmlSections.push(`<tr class="table-secondary"><th colspan="2">📝 Benutzerdefinierte Metadaten</th></tr>`);
+                  const stdKeys = new Set([...Object.keys(std), ...Object.keys(index)].map(k => k.toLowerCase()));
+                  for (const { Key, Value } of user) {
+                      if (!stdKeys.has((Key || "").toLowerCase())) {
+                          htmlSections.push(`<tr><th>${Key}</th><td>${Value}</td></tr>`);
+                      }
+                  }
+              }
+
+              document.getElementById("metadataTable").innerHTML = htmlSections.length
+                  ? htmlSections.join("")
+                  : `<tr><td colspan="2"><em>Keine Metadaten vorhanden</em></td></tr>`;
+          }
+
+                         function moveFileToFolder() {
+             const menu = document.getElementById("folderContextMenu");
+             const targetFolder = menu.getAttribute("data-folder-path");
+             const copied = sessionStorage.getItem("copiedFilePath");
+             const moveMode = sessionStorage.getItem("moveMode") === "true";
+
+             console.log("📋 moveFileToFolder()", {copied, moveMode, targetFolder});
+
+             if (!copied || !targetFolder || !moveMode) {
+               Swal.fire('⚠️ Ungültiger Zustand', 'Stelle sicher, dass eine Datei ausgeschnitten und ein Zielordner ausgewählt wurde.', 'warning');
+               return;
+             }
+
+             const fileName = copied.split('/').pop();
+             const cleanedSource = copied.replace(/^https:\/\/[^\/]+\/(dokumente\/)?/, 'dokumente/');
+             const cleanedTargetFolder = targetFolder.replace(/^dokumente\/?/, '');
+             const targetPath = `dokumente/${cleanedTargetFolder}/${fileName}`.replace(/\/+/g, '/');
+
+             console.log("➡️ move", cleanedSource, "→", targetPath);
+
+             fetch('?handler=MoveFile', {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({ source: cleanedSource, target: targetPath })
+             })
+             .then(res => res.ok ? res.json() : Promise.reject(res))
+             .then(json => {
+               console.log("🚚 MoveFile result:", json);
+               if (json.success) {
+                 sessionStorage.removeItem("copiedFilePath");
+                 sessionStorage.removeItem("moveMode");
+                 Swal.fire('✅ Datei verschoben', '', 'success').then(() => location.reload());
+               } else {
+                 Swal.fire('❌ Fehler beim Verschieben', json.message || '', 'error');
+               }
+             })
+             .catch(err => {
+               console.error(err);
+               Swal.fire('❌ Technischer Fehler', err.message, 'error');
+             });
+
+             closeAllContextMenus();
+           }
+
+
+           let isMoveOperation = false;
+           function showFolderContextMenu(event, folderPath) {
+               event.preventDefault();
+               const copied = sessionStorage.getItem("copiedFilePath");
+               const moveMode = sessionStorage.getItem("moveMode") === "true";
+
+               const menu = document.getElementById("folderContextMenu");
+               const pasteItem = menu.querySelector('#pasteFileItem');
+               const moveItem = menu.querySelector('#moveFileItem');
+               if (pasteItem) {
+                   pasteItem.style.display = (copied && !moveMode) ? 'block' : 'none';
+               }
+               if (moveItem) {
+                   moveItem.style.display = (copied && moveMode) ? 'block' : 'none';
+               }
+
+               menu.setAttribute("data-folder-path", folderPath);
+               menu.style.left = `${event.pageX}px`;
+               menu.style.top = `${event.pageY}px`;
+               menu.classList.remove("d-none");
+
+               console.log("📁  Menu ordner für  :", folderPath, " | Copied:", copied, " | Move:", moveMode);
+           }
+
+
+                       function prepareMoveFile(filePath) {
+                           sessionStorage.setItem("copiedFilePath", filePath || rightClickedPath);
+                           sessionStorage.setItem("moveMode", "true");
+                           showPastePopup();
+                       }
+
+
+            function onFolderClick(event, folderId) {
+               event.preventDefault();
+               event.stopPropagation();
+               toggleFolder(folderId);
+           }
+                   function closeAllContextMenus() {
+               document.getElementById("customContextMenu")?.classList.add("d-none");
+               document.getElementById("folderContextMenu")?.classList.add("d-none");
+                   }
+
+           function promptNewFolder() {
+               // 🛠️ FIX: Zielordner vorbefüllen, falls eine Abteilung ausgewählt ist
+               const currentAbteilung = document.getElementById("filterAbteilung")?.value || "";
+               const initialValue = currentAbteilung ? `${currentAbteilung}/` : "";
+
+               Swal.fire({
+                 title: '📁 Neuen Ordner erstellen',
+                 input: 'text',
+                 inputValue: initialValue, // 🔹 Setzt den aktuellen Kontext
+                 inputPlaceholder: 'z.B. neueKategorie/unterordner',
+                 showCancelButton: true,
+                 confirmButtonText: 'Erstellen',
+                 cancelButtonText: 'Abbrechen',
+                 inputValidator: (value) => {
+                   if (!value || value.trim() === '') return 'Name erforderlich';
+                   if (value.includes('..')) return 'Ungültiger Pfad';
+                 }
+               }).then(result => {
+                 if (!result.isConfirmed) return;
+ 
+                 const cleaned = result.value.trim().replace(/^dokumente\/?/, '');
+ 
+                 fetch('?handler=CreateExplorer', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ newFolder: cleaned })
+                 })
+                 .then(res => res.ok ? res.json() : Promise.reject(res))
+                 .then(json => {
+                   if (json.success) {
+                     Swal.fire('✅ Ordner erstellt', '', 'success').then(() => location.reload());
+                   } else {
+                     Swal.fire('❌ Fehler', json.message || '', 'error');
+                   }
+                 })
+                 .catch(err => {
+                   Swal.fire('❌ Technischer Fehler', err.message, 'error');
+                 });
+               });
+           }
+
+             function copyFileToFolder() {
+             const menu = document.getElementById("folderContextMenu");
+             const targetFolder = menu.getAttribute("data-folder-path");
+
+             if (!copiedFilePath) {
+               Swal.fire('⚠️ Keine Datei kopiert', 'Bitte zuerst "Kopieren" benutzen.', 'warning');
+               return;
+             }
+
+             const fileName = copiedFilePath.split('/').pop();
+           const cleanedSource = copiedFilePath.replace(/^https:\/\/[^\/]+\/(dokumente\/)?/, 'dokumente/');
+
+             const cleanedTargetFolder = targetFolder.replace(/^dokumente\/?/, '');
+             const targetPath = `dokumente/${cleanedTargetFolder}/${fileName}`.replace(/\/+/g, '/');
+
+             fetch('/Dokument/CoperFile', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ source: cleanedSource, target: targetPath })
+             })
+             .then(res => res.ok ? res.json() : Promise.reject(res))
+             .then(json => {
+               if (json.success) {
+                         const url = new URL(window.location.href);
+           url.searchParams.set("SelectedFolder", `dokumente/${cleanedTargetFolder}`);
+           window.location.href = url.toString();
+               } else {
+                 Swal.fire('❌ Kopieren fehlgeschlagen', json.message || '', 'error');
+               }
+             })
+             .catch(err => {
+               Swal.fire('❌ Technischer Fehler', err.message, 'error');
+             });
+
+             closeAllContextMenus();
+           }
+                          function toggleExplorer() {
+               const explorerCol = document.getElementById("explorerColumn");
+               const tableCol = document.getElementById("tableColumn");
+               const showBtn = document.getElementById("btnShowExplorer");
+
+               if (explorerCol.classList.contains("d-none")) {
+                   explorerCol.classList.remove("d-none");
+                   tableCol.classList.remove("col-lg-12");
+                   tableCol.classList.add("col-lg-8");
+                   showBtn.classList.add("d-none");
+               } else {
+                   explorerCol.classList.add("d-none");
+                   tableCol.classList.remove("col-lg-8");
+                   tableCol.classList.add("col-lg-12");
+                   showBtn.classList.remove("d-none");
+               }
+           }
+           // Js für Ordner Kopieren umbenennen
+
+                   let rightClickedFolder = "";
+
+           function copyFolder() {
+             copiedFilePath = null;
+             copiedFolderPath = rightClickedFolder;
+             Swal.fire({ toast: true, icon: 'info', title: '📁 Ordner kopiert', timer: 1000, position: 'top-end', showConfirmButton: false });
+             closeAllContextMenus();
+           }
+
+           function renameFile() {
+               if (!rightClickedPath) return;
+
+               const fullPath = rightClickedPath;
+               const currentName = fullPath.split("/").pop();
+               const extension = currentName.includes('.') ? '.' + currentName.split('.').pop() : '';
+               const folderPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+
+               Swal.fire({
+                   title: '✏️ Datei umbenennen',
+                   input: 'text',
+                   inputValue: currentName.replace(extension, ''),
+                   showCancelButton: true,
+                   confirmButtonText: 'Umbenennen',
+                   cancelButtonText: 'Abbrechen',
+                   inputValidator: (newName) => {
+                       if (!newName || !newName.trim()) return 'Name erforderlich';
+                       if (/[<>:"\/\\|?*]/.test(newName)) return 'Ungültige Zeichen im Namen';
+                       if (newName.trim().toLowerCase() === ".init") return 'Name ".init" ist reserviert';
+                   }
+               }).then(result => {
+                   if (!result.isConfirmed) return;
+
+                   let newName = result.value.trim();
+                   if (!newName.includes('.')) newName += extension;
+
+                   const cleanedSource = fullPath.replace(/^https:\/\/[^\/]+\/dokumente\//, 'dokumente/');
+                   const cleanedFolder = folderPath.replace(/^https:\/\/[^\/]+\/dokumente\//, 'dokumente/');
+                   const cleanedTarget = `${cleanedFolder}/${newName}`.replace(/\/+/g, '/');
+
+                   fetch('?handler=RenameFile', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                           SourcePath: cleanedSource,
+                           TargetPath: cleanedTarget
+                           // Passwort-Feld ist entfernt!
+                       })
+                   })
+                   .then(res => res.text())
+                   .then(txt => {
+                       try {
+                           const json = JSON.parse(txt);
+                           if (json.success) {
+                               Swal.fire('✅ Erfolgreich umbenannt', '', 'success').then(() => location.reload());
+                           } else {
+                               Swal.fire('❌ Fehler beim Umbenennen', json.message || '', 'error');
+                           }
+                       } catch (e) {
+                           Swal.fire('❌ Antwortfehler', 'Antwort ist kein gültiges JSON.', 'error');
+                           console.error("🔍 Server returned:", txt);
+                       }
+                   })
+                   .catch(err => {
+                       Swal.fire('❌ Technischer Fehler', err.message, 'error');
+                   });
+
+                   closeAllContextMenus();
+               });
+           }
+
+                   function openFolderContextMenu(event, folderPath) {
+             event.preventDefault();
+             const menu = document.getElementById("folderContextMenu");
+             rightClickedFolder = folderPath;
+             menu.setAttribute("data-folder-path", folderPath);
+             menu.style.top = `${event.clientY}px`;
+             menu.style.left = `${event.clientX}px`;
+             menu.classList.remove("d-none");
+
+             const copied = sessionStorage.getItem("copiedFilePath");
+             const moveMode = sessionStorage.getItem("moveMode") === "true";
+
+             console.log("🖱️ openFolderContextMenu()", {folderPath, copied, moveMode});
+
+             document.getElementById("pasteFileItem").style.display = (copied && !moveMode) ? "block" : "none";
+             document.getElementById("moveFileItem").style.display = (copied && moveMode) ? "block" : "none";
+           }
+
+
+           function openFileContextMenu(event, filePath) {
+             event.preventDefault();
+
+             rightClickedPath = filePath;
+             const menu = document.getElementById("customContextMenu");
+
+             menu.style.top = `${event.clientY}px`;
+             menu.style.left = `${event.clientX}px`;
+             menu.classList.remove("d-none");
+
+             console.log("📄 Datei ausgewählt:", rightClickedPath);
+             menu.setAttribute("data-file-path", filePath);
+           }
+
+                   function deleteFolder(element) {
+             const menu = document.getElementById("folderContextMenu");
+             const folderPath = menu.getAttribute("data-folder-path");
+
+             console.log("🗑️ Löschen Ordner :", folderPath);
+
+             if (!folderPath) {
+               Swal.fire('❌ Fehler', 'Kein gültiger Ordnerpfad', 'error');
+               return;
+             }
+
+             Swal.fire({
+               title: '🗑️ Ordner löschen?',
+               icon: 'warning',
+               showCancelButton: true,
+               confirmButtonText: 'Ja löschen'
+             }).then(r => {
+               if (!r.isConfirmed) return;
+
+               console.log("📤 Envoi de folderPath:", folderPath);
+
+               fetch('?handler=DeleteFolder', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ folderPath: folderPath })
+               })
+               .then(r => r.json())
+               .then(json => {
+                 if (json.success) Swal.fire('✅ Gelöscht').then(() => location.reload());
+                 else Swal.fire('❌ Fehler', json.message || 'Unbekannter Fehler', 'error');
+               });
+             });
+
+             closeAllContextMenus();
+           }
+
+
+
+           function pasteIntoFolder() {
+             console.log("📋 abfrage Kopiert!");
+             console.log("🔹 copiedFolderPath:", copiedFolderPath);
+             console.log("🔹 rightClickedFolder:", rightClickedFolder);
+
+             if (!copiedFolderPath || !rightClickedFolder) {
+               Swal.fire('❌ Fehler', 'Kein Ziel- oder Quellordner angegeben', 'error');
+               return;
+             }
+
+             const folderName = copiedFolderPath.split('/').pop();
+             const targetPath = `${rightClickedFolder}/${folderName}`;
+             console.log("📁 Zielpfad:", targetPath);
+
+             fetch('?handler=CopyFolder', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                 sourcePath: copiedFolderPath,
+                 targetPath: targetPath
+               })
+             })
+             .then(r => r.json())
+             .then(json => {
+               console.log("📥 Résultat de CopyFolder:", json);
+               if (json.success) {
+                 Swal.fire('✅ Ordner kopiert').then(() => location.reload());
+               } else {
+                 Swal.fire('❌ Fehler', json.message, 'error');
+               }
+             })
+             .catch(err => {
+               console.error("❌ Netzwerk- oder Serverfehler:", err);
+               Swal.fire('❌ Fehler', 'Beim Kopieren ist ein Fehler aufgetreten', 'error');
+             });
+
+             closeAllContextMenus();
+           }
+
+           function getNewPathFromName(oldPath, newName) {
+             const parts = oldPath.split('/');
+             parts.pop();
+             return parts.concat(newName).join('/');
+           }
+
+                    function loadFile(fileUrl) {
+               const ext = fileUrl.split('.').pop().toLowerCase();
+               const preview = document.getElementById("filePreview");
+
+               if (ext === "pdf") {
+                   const proxyUrl = `/Dokument/Index?handler=Preview&url=${encodeURIComponent(fileUrl)}`;
+                   const loadingTask = pdfjsLib.getDocument(proxyUrl);
+                   loadingTask.promise.then(pdf => {
+                       pdf.getPage(1).then(page => {
+                           const canvas = document.getElementById('pdf-canvas');
+                           const context = canvas.getContext('2d');
+                           const viewport = page.getViewport({ scale: 1.5 });
+                           canvas.height = viewport.height;
+                           canvas.width = viewport.width;
+                           page.render({ canvasContext: context, viewport: viewport });
+                       });
+                   }).catch(err => {
+                       console.error("❌ Erreur lors du rendu PDF:", err);
+                       Swal.fire({
+                           icon: 'info',
+                           title: 'herunterladen',
+                           html: `<a href="${fileUrl}" target="_blank">herunterladen</a>`,
+                           confirmButtonText: "OK"
+                       });
+                   });
+               } else {
+                   preview.innerHTML = `<a href="${fileUrl}" target="_blank">📄 Télécharger</a>`;
+               }
+           }
+                  function toggleAllExplorer(expand) {
+               const folders = document.querySelectorAll('[data-folder]');
+               folders.forEach(folder => {
+                   const content = folder.querySelector('.folder-content');
+                   if (content) {
+                       content.style.display = expand ? 'block' : 'none';
+                   }
+               });
+           }
+            // Öffnet das Modal für ein bestimmtes Dokument-Audit-Log
+           async function openAuditModal(dokumentId) {
+               const response = await fetch(`/api/auditlog/${dokumentId}`);
+               const logs = await response.json();
+
+               const container = document.getElementById("auditLogContainer");
+               if (!logs || logs.length === 0) {
+                   container.innerHTML = "<em class='text-muted'>Keine Aktivitäten für dieses Dokument gefunden.</em>";
+               } else {
+                   container.innerHTML = logs.map(log => `
+                       <div class="border-bottom pb-2 mb-2">
+                           <strong>🕒 ${new Date(log.zeitstempel).toLocaleString()}</strong><br/>
+                           📄 <span class="text-warning">${log.aktion}</span><br/>
+                           👤 Benutzer: <code>${log.benutzerId}</code>
+                           ${log.details ? `<div class="text-muted small mt-1">🔍 ${log.details}</div>` : ""}
+                       </div>
+                   `).join('');
+               }
+
+               new bootstrap.Modal(document.getElementById("auditModal")).show();
+           }
+
+           // Öffnet das Modal mit allen Audit-Logs
+           function openAllAuditLogs() {
+               const modal = new bootstrap.Modal(document.getElementById('allAuditModal'));
+               modal.show();
+
+               fetch('/api/auditlog/all')  // Diese Route wird gleich definiert
+                   .then(res => res.json())
+                   .then(data => {
+                       const content = data.map(log => `
+                           <div class="border-bottom py-2">
+                               <strong>🕒 ${new Date(log.zeitstempel).toLocaleString()}</strong><br />
+                               📄 <code>${log.dokumentId}</code> – <span class="text-info">${log.dateiname || "?"}</span><br />
+                               🗂️ ${log.kategorie || "Unbekannt"}<br />
+                               👤 ${log.benutzerId}<br />
+                               ✏️ ${log.aktion}
+                           </div>
+                       `).join('');
+                       document.getElementById('allAuditContent').innerHTML = content || "Keine Protokolle gefunden.";
+                   })
+                   .catch(() => {
+                       document.getElementById('allAuditContent').innerHTML = "❌ Fehler beim Laden der Protokolle.";
+                   });
+           }
+
+                                     const CURRENT_USER_ID = '@User?.FindFirst(ClaimTypes.NameIdentifier)?.Value';
+
+                   function logAuditAction(dokumentId, aktion) {
+                       fetch('/api/auditlog', {
+                           method: 'POST',
+                           headers: {
+                               'Content-Type': 'application/json'
+                           },
+                           body: JSON.stringify({
+                               dokumentId: dokumentId,
+                               benutzerId: CURRENT_USER_ID,
+                               aktion: aktion
+                           })
+                       }).catch(() => console.warn("❌ Audit-Log konnte nicht gespeichert werden."));
+                   }
+                                               function exportHistoryPdf() {
+                                 const content = document.getElementById('allAuditContent').innerHTML;
+
+                                 const opt = { margin: 10, filename: 'dokument_historie.pdf' };
+                                 html2pdf().set(opt).from(content).save();
+                               }
+                                                           function shareByEmail() {
+                                 const subject = encodeURIComponent("Dokument Historie");
+                                 const body = encodeURIComponent(document.getElementById('allAuditContent').innerText);
+                                 window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                               }
+                                                           function shareGoogleDrive() {
+
+                                 window.open('/share/google-drive?documentId=' + CURRENT_DOCUMENT_ID, '_blank');
+                               }
+                                                           function shareToERP() {
+                                 fetch('/api/share/erp', { method: 'POST', body: JSON.stringify({ dokumentId: CURRENT_DOCUMENT_ID }) })
+                                   .then(r => r.ok ? alert('Erfolgreich geteilt mit ERP!') : alert('Fehler beim Teilen.'))
+                                   .catch(() => alert('Netzwerkfehler.'));
+                                                           }
+                function showFileContextMenuDynamic(
+              event,
+              id,
+              filePath,
+              sasUrl,
+              encodedStdMeta,
+              encodedIndexedMeta,
+              encodedUserMeta,
+              estSigne = false,
+              isIndexed = false,
+              canVersion = false,
+              canSign = false,
+              filename = ""
+          ) {
+              event.preventDefault();
+              event.stopPropagation();
+
+              const menu = document.getElementById("customContextMenu");
+              rightClickedPath = filePath;
+              currentFileId = id;
+              signedDownloadUrl = sasUrl;
+
+              console.log("📂 Menu contextuel geöffnet:", {
+                  id,
+                  filePath,
+                  filename,
+                  estSigne,
+                  isIndexed,
+                  canVersion,
+                  canSign
+              });
+
+              // ✅ Détecte si le fichier appartient à un dossier "versionen"
+              const isVersionFile = filePath?.toLowerCase().includes("/versionen/");
+
+              // 🔹 Favoriten-Label
+              const isFavorit = Array.isArray(window.userFavoriten)
+                  && window.userFavoriten.map(String).includes(String(id));
+              const favLabel = isFavorit ? "❌ Entfernen aus Favoriten" : "⭐ Favorisieren";
+
+              function createBadge(isActive, activeText, inactiveText, iconActive, iconInactive, activeClass, inactiveClass) {
+                  return isActive
+                      ? `<span class="badge ${activeClass} me-1"><i class="bi ${iconActive}"></i> ${activeText}</span>`
+                      : `<span class="badge ${inactiveClass} me-1"><i class="bi ${iconInactive}"></i> ${inactiveText}</span>`;
+              }
+
+              function createMenuItem(label, action, icon = "", disabled = false, extraClass = "") {
+                  if (disabled) {
+                      return `<li class="menu-item disabled ${extraClass}" style="color: #6c757d;">🚫 ${label}</li>`;
+                  }
+                  // Force black unless a color class is present
+                  const style = (extraClass && extraClass.includes("text-")) ? "" : "style='color: black !important;'";
+                  return `<li class="menu-item ${extraClass}" onclick="${action}" ${style}>${icon} ${label}</li>`;
+              }
+
+              const unterschriebenBadge = createBadge(
+                  estSigne,
+                  "Unterschrieben",
+                  "Ausstehend",
+                  "bi-check-circle-fill",
+                  "bi-pencil",
+                  "bg-success",
+                  "bg-warning text-dark"
+              );
+
+              const indexiertBadge = createBadge(
+                  isIndexed,
+                  "Indexiert",
+                  "Nicht indexiert",
+                  "bi-check-circle",
+                  "bi-search",
+                  "bg-success",
+                  "bg-secondary text-dark"
+              );
+
+              // -----------------------------
+              // Menü-Einträge
+              // -----------------------------
+              let anzeigenAction;
+              let downloadAction;
+
+              if (filePath && filePath.startsWith("chunked://")) {
+                  const cleanId = id || filePath.replace("chunked://", "");
+                  anzeigenAction = `
+                      logAuditAction('${cleanId}', 'Chunked Dokument Vorschau geöffnet');
+                      openPreview('${filename}', '/api/pdfproxy/view/${cleanId}', '${cleanId}', ${isVersionFile});
+                  `;
+                  downloadAction = `
+                      logAuditAction('${cleanId}', 'Chunked Dokument heruntergeladen');
+                      window.location.href = '/api/pdfproxy/download/${cleanId}';
+                  `;
+              } else {
+                  const cleanId = id;
+                  anzeigenAction = `
+                      logAuditAction('${cleanId}', 'Dokument oder Version Vorschau geöffnet');
+                      openPreview('${filename}', '/api/pdfproxy/view/${cleanId}', '${cleanId}', ${isVersionFile});
+                  `;
+                  downloadAction = `
+                      logAuditAction('${cleanId}', 'Dokument heruntergeladen');
+                      window.location.href = '/api/pdfproxy/download/${cleanId}';
+                  `;
+              }
+
+              const anzeigenMenu = createMenuItem("Anzeigen", anzeigenAction, "📄");
+              const downloadMenu = createMenuItem("Download", downloadAction, "📥");
+              const metadatenBearbeitenMenu = createMenuItem(
+                  "Metadaten bearbeiten",
+                  `window.location.href='/Dokument/MetadatenBearbeiten?id=${id}'`,
+                  "✏️",
+                  false,
+                  "text-info"
+              );
+              const versionenMenu = createMenuItem(
+                  "Versionen anzeigen",
+                  `logAuditAction('${id}', 'Versionen angezeigt'); window.location.href='/Dokument/Versionen?dokumentId=${id}'`,
+                  "📚"
+              );
+              const historieMenu = createMenuItem(
+                  "Historie",
+                  `logAuditAction('${id}', 'Historie geöffnet'); openAuditModal('${id}')`,
+                  "🕓"
+              );
+              const metadataMenu = createMenuItem(
+                  "Metadaten",
+                  `logAuditAction('${id}', 'Metadaten geöffnet'); loadMetadataBtn('${encodedStdMeta}', '${encodedIndexedMeta}', '${encodedUserMeta}', '${filePath}')`,
+                  "ℹ️"
+              );
+
+              const isPdf = filePath?.toLowerCase().endsWith(".pdf");
+
+              const unterschreibenMenu = !estSigne
+                  ? (canSign
+                      ? (isPdf
+                          ? createMenuItem(
+                              "Unterschreiben",
+                              `logAuditAction('${id}', 'Signatur gestartet'); window.location.href='/Pdf/EditOne?FileName=${encodeURIComponent(filePath)}&OriginalPath=${encodeURIComponent(filePath)}'`,
+                              "🖊️"
+                          )
+                          : createMenuItem("Unterschreiben", "", "🚫", true))
+                      : createMenuItem("Unterschreiben", "", "🚫", true))
+                  : "";
+
+              const indexierenMenu = !isIndexed
+                  ? createMenuItem(
+                      "Indexieren",
+                      `logAuditAction('${id}', 'Dokument indexiert'); window.location.href='/Dokument/Indexierte?id=${id}'`,
+                      "🗂️"
+                  )
+                  : `<li class="menu-item disabled text-success"><i class="bi bi-check-circle"></i> Bereits indexiert</li>`;
+
+              const unterschriftAnfragenMenu = createMenuItem(
+                  "Unterschrift anfragen",
+                  `openSignatureRequestModal('${id}', '${filePath}')`,
+                  "✍️"
+              );
+
+              const renameMenu = createMenuItem("Umbenennen", "renameFile()", "✏️");
+              const copyMenu = createMenuItem("Kopieren", `copyFileWithPrompt('${filePath}')`, "📄");
+              const moveMenu = createMenuItem("Ausschneiden", `prepareMoveFileWithPrompt('${filePath}')`, "✂️");
+              const archiveMenu = createMenuItem("Archivieren", "archiveFile()", "📦");
+              const deleteMenu = createMenuItem("Löschen", "deleteFile()", "🗑️", false, "text-danger");
+              const copyPathMenu = createMenuItem("Pfad kopieren", "copyPath()", "📋");
+              const eigenschaftenMenu = createMenuItem("Eigenschaften", "showProperties()", "ℹ️");
+              const favMenu = createMenuItem(favLabel, `toggleFavorite('${id}')`, "");
+              const shareMenu = createMenuItem("Teilen", `openShareModal('${id}')`, "🔗");
+              const editMenu = createMenuItem("Bearbeiten", `redirectToEdit('${id}')`, "📝");
+
+                     const aufgabeErstellenMenu = createMenuItem(
+              "📋 Aufgabe erstellen",
+              `createTaskFromFile('${id}', '${filePath}', '${filename}')`,
+              "🗒️"
+          );
+
+              const html = `
+              <ul class="list-unstyled mb-0 context-menu-root">
+                  <li class="menu-group" onclick="toggleSubmenu(this)">📂 Datei</li>
+                  <ul class="submenu d-none">
+                      ${anzeigenMenu}
+                      ${downloadMenu}
+                      ${metadatenBearbeitenMenu}
+                      ${versionenMenu}
+                      ${historieMenu}
+                      ${metadataMenu}
+                  </ul>
+                  <li class="menu-group" onclick="toggleSubmenu(this)">✍️ Signatur</li>
+                  <ul class="submenu d-none">
+                      ${unterschriftAnfragenMenu}
+                  </ul>
+                  <li class="menu-group" onclick="toggleSubmenu(this)">📝 Bearbeiten</li>
+                  <ul class="submenu d-none">
+                      ${editMenu}
+                      ${renameMenu}
+                      ${copyMenu}
+                      ${moveMenu}
+                      ${archiveMenu}
+                      ${deleteMenu}
+                  </ul>
+                       <li class="menu-group" onclick="toggleSubmenu(this)">🧭 Aufgaben</li>
+                <ul class="submenu d-none">
+                    ${aufgabeErstellenMenu}
+                </ul>
+                  <li class="menu-group" onclick="toggleSubmenu(this)">⚙️ Weitere Aktionen</li>
+                  <ul class="submenu d-none">
+                      ${copyPathMenu}
+                      ${eigenschaftenMenu}
+                      ${favMenu}
+                      ${shareMenu}
+                  </ul>
+              </ul>`;
+
+              menu.innerHTML = html;
+              menu.style.top = `${event.clientY}px`;
+              menu.style.left = `${event.clientX}px`;
+              menu.classList.remove("d-none");
+          }
+
+                  async function createTaskFromFile(id, filePath, filename) {
+              try {
+                  const encodedPath = encodeURIComponent(filePath || "");
+                  const encodedName = encodeURIComponent(filename || "");
+
+                  const targetUrl = `https://localhost:7074/Tests/Aufgaben?fromFileId=${id}&fileName=${encodedName}&filePath=${encodedPath}`;
+                  console.log("📨 Aufgabe erstellen mit Datei:", { id, filePath, filename, targetUrl });
+
+                  window.open(targetUrl, "_blank");
+              } catch (err) {
+                  console.error("❌ Fehler beim Öffnen der Aufgaben-Seite:", err);
+                  alert("Fehler beim Öffnen der Aufgaben-Seite!");
+              }
+          }
+                  document.addEventListener("DOMContentLoaded", () => {
+              const showModal = "@(ViewData["ShowCreateModal"] ?? "false")";
+              const fileName = "@(ViewData["AttachedFileName"] ?? "")";
+              const filePath = "@(ViewData["AttachedFilePath"] ?? "")";
+              const fileId = "@(ViewData["AttachedFileId"] ?? "")";
+
+              if (showModal === "True" || showModal === "true") {
+                  console.log("📄 PDF erhalten für neue Aufgabe:", { fileName, filePath, fileId });
+
+                  // Ouvre automatiquement la modale
+                  const modalEl = document.getElementById("createTaskModal");
+                  if (modalEl) {
+                      const modal = new bootstrap.Modal(modalEl);
+                      modal.show();
+                  }
+
+                  // Pré-affiche le nom du fichier attaché
+                  const fileLabel = document.getElementById("attachedFileLabel");
+                  if (fileLabel) {
+                      fileLabel.textContent = `📎 Datei verknüpft: ${decodeURIComponent(fileName)}`;
+                  }
+
+                  // Remplit les champs cachés
+                  const hiddenId = document.getElementById("attachedFileId");
+                  const hiddenPath = document.getElementById("attachedFilePath");
+                  if (hiddenId) hiddenId.value = fileId;
+                  if (hiddenPath) hiddenPath.value = decodeURIComponent(filePath);
+              }
+          });
+
+
+
+                   function loadMetadataBtn(encodedStdMeta, encodedIndexedMeta, encodedUserMeta, filePath) {
+              const btn = document.createElement('button');
+
+              // 👉 Base64 direkt speichern, NICHT vorher decodieren
+              btn.setAttribute("data-meta", encodedStdMeta || "");
+              btn.setAttribute("data-index-meta", encodedIndexedMeta || "");
+              btn.setAttribute("data-user-meta", encodedUserMeta || "");
+              btn.setAttribute("data-meta-path", filePath);
+
+              loadMetadata(btn);
+
+              const modal = new bootstrap.Modal(document.getElementById("metaModal"));
+              modal.show();
+          }
+
+
+
+
+                   function redirectToEdit(id, canVersion) {
+                   window.location.href=`/Dokument/Bearbeiten?id=${id}&fromTask=false`;
+
+              }
+
+
+
+
+                   function redirectToVersionen(id) {
+                       window.location.href = `/Dokument/Versionen?dokumentId=${id}`;
+                   }
+
+                   function showMetadataModal() {
+                       const btn = document.querySelector(`[data-meta-path="${rightClickedPath}"]`);
+                       if (btn) {
+                           btn.click();
+                       } else {
+                           Swal.fire('❌ Fehler', 'Metadaten nicht gefunden', 'error');
+                       }
+                   }
+                                   function showPasswordModal(docId, callback) {
+                       const pw = prompt("🔒 Bitte Passwort für das Dokument eingeben:");
+                       if (pw !== null) {
+                           fetch('/api/dokumentzugriff/check', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ dokumentId: docId, passwort: pw })
+                           })
+                           .then(res => res.json())
+                                          .then(data => {
+                       if (data.allowed) {
+                           // Zugriff merken!
+                           sessionStorage.setItem('doc_' + docId, 'ok');
+                           alert("✅ Zugriff erlaubt!");
+                           if (callback) callback(true, pw);
+                       } else if (data.reason === "no-approval") {
+                           alert("⏳ Admin-Freigabe nötig! Zugriff wurde noch nicht erlaubt.");
+                       } else if (data.reason === "wrong-password") {
+                           alert("❌ Falsches Passwort!");
+                       } else if (data.reason === "no-document") {
+                           alert("❌ Dokument existiert nicht!");
+                       } else {
+                           alert("❌ Zugriff verweigert!");
+                       }
+                   });
+                       }
+                   }
+
+                                   function requestApproval(docId) {
+                       if (!confirm("🔔 Zugriff beantragen? Der Admin muss freigeben.")) return;
+                               fetch('/api/dokumentzugriff/anfordern', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ dokumentId: docId })
+                       })
+                       .then(res => res.json())
+                       .then(data => {
+                           if (data.requested) {
+                               alert("⏳ Zugriff beantragt. Bitte auf Admin-Freigabe warten!");
+                           } else {
+                               alert("❌ Anfrage konnte nicht gestellt werden.");
+                           }
+                       });
+                   }
+
+
+                                      function onProtectedClick(dokumentId) {
+                       currentDokumentId = dokumentId;
+
+                       // Prüfen ob Zugriff schon erlaubt ist:
+                       if (sessionStorage.getItem('doc_' + dokumentId) === 'ok') {
+                           // Schon erlaubt: Direkt Vorschau öffnen
+                           window.location = '/Dokument/Download?dokumentId=' + dokumentId;
+                           return;
+                       }
+                       // Sonst Modal öffnen
+                       document.getElementById('passwortInput').value = "";
+                       document.getElementById('pwError').style.display = "none";
+                       var modal = new bootstrap.Modal(document.getElementById('passwortModal'));
+                       modal.show();
+                   }
+
+
+                   function tryOpenProtected() {
+                       let passwort = document.getElementById('passwortInput').value;
+                            fetch('/api/dokumentzugriff/check', {
+                   method: 'POST',
+                   headers: {'Content-Type':'application/json'},
+                   body: JSON.stringify({ dokumentId: currentDokumentId, passwort: passwort })
+                       })
+                       .then(r => r.json())
+                       .then(data => {
+                       if (data.allowed) {
+                           // Zugriff merken!
+                           sessionStorage.setItem('doc_' + currentDokumentId, 'ok');
+                           window.location = '/Dokument/Download?dokumentId=' + currentDokumentId + '&passwort=' + encodeURIComponent(passwort);
+                       } else {
+                           document.getElementById('pwError').innerText = "Falsches Passwort!";
+                           document.getElementById('pwError').style.display = "block";
+                       }
+                   });
+
+                   }
+                                   function ensureDocumentAccess(docId, callback) {
+                       // Schon Zugriff in diesem Tab?
+                       if (sessionStorage.getItem('doc_' + docId) === 'ok') {
+                           callback();
+                           return;
+                       }
+                       // Sonst Passwort abfragen
+                       const pw = prompt("🔒 Bitte Passwort für das Dokument eingeben:");
+                       if (pw !== null) {
+                           fetch('/api/dokumentzugriff/check', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ dokumentId: docId, passwort: pw })
+                           })
+                           .then(res => res.json())
+                           .then(data => {
+                               if (data.allowed) {
+                                   sessionStorage.setItem('doc_' + docId, 'ok');
+                                   callback();
+                               } else if (data.reason === "wrong-password") {
+                                   alert("❌ Falsches Passwort!");
+                               } else if (data.reason === "no-approval") {
+                                   alert("⏳ Admin-Freigabe nötig!");
+                               } else {
+                                   alert("❌ Zugriff verweigert!");
+                               }
+                           });
+                       }
+                   }
+
+                    document.addEventListener('DOMContentLoaded', function () {
+               const explorer = document.getElementById('explorerContainer');
+               const btn = document.getElementById('toggleSizeBtn');
+
+               let compact = false;
+               if (btn) {
+                   btn.addEventListener('click', function () {
+                       compact = !compact;
+                       explorer.classList.toggle('compact', compact);
+                       explorer.classList.toggle('expanded', !compact);
+
+                       // Optional: Icon wechseln
+                       btn.innerHTML = compact
+                           ? '<i class="bi bi-arrows-angle-expand"></i>'
+                           : '<i class="bi bi-arrows-angle-contract"></i>';
+                   });
+               }
+
+               // Initial: Expanded
+               if (explorer) explorer.classList.add('expanded');
+           });
+
+                                   function setExplorerSize(mode) {
+                       var explorer = document.getElementById('explorerContainer');
+                       if (!explorer) return;
+                       explorer.classList.remove('compact', 'expanded');
+                       if (mode === 'compact') explorer.classList.add('compact');
+                       if (mode === 'expanded') explorer.classList.add('expanded');
+                   }
+                                   let explorerZoom = 1; // 1 = Standard, z.B. 1rem/430px
+
+                   function zoomExplorer(direction) {
+                       const explorer = document.getElementById('explorerContainer');
+                       if (!explorer) return;
+                       explorerZoom += 0.1 * direction; // 10% größer/kleiner je Klick
+                       explorerZoom = Math.max(0.6, Math.min(2, explorerZoom)); // Grenzen setzen
+                       explorer.style.fontSize = (explorerZoom) + 'rem';
+                       explorer.style.maxWidth = (430 * explorerZoom) + 'px';
+                       explorer.style.minWidth = (260 * explorerZoom) + 'px';
+                   }
+
+                   function resetExplorerZoom() {
+                       explorerZoom = 1;
+                       const explorer = document.getElementById('explorerContainer');
+                       if (!explorer) return;
+                       explorer.style.fontSize = '';
+                       explorer.style.maxWidth = '';
+                       explorer.style.minWidth = '';
+                   }
+                    function toggleFavorite(dokumentId) {
+                                        fetch('?handler=ToggleFavorit', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ DokumentId: dokumentId })
+                                        })
+                                        .then(res => res.json())
+                                        .then(json => {
+                                            if(json.success) {
+                                                // ACHTUNG: Server liefert evtl. "istFavorit" statt "isFavorit"
+                                                const isFavNow = json.istFavorit ?? json.isFavorit;
+                                                // Browser-Array updaten
+                                                if(typeof window.userFavoriten === "undefined" || window.userFavoriten === null) window.userFavoriten = [];
+                                                if(isFavNow) {
+                                                    // Hinzufügen, falls nicht drin
+                                                    if (!window.userFavoriten.includes(dokumentId))
+                                                        window.userFavoriten.push(dokumentId);
+                                                } else {
+                                                    // Entfernen
+                                                    window.userFavoriten = window.userFavoriten.filter(id => id !== dokumentId);
+                                                }
+
+                                                // Optional: Log für Debug
+                                                console.log("Favoriten nach Toggle:", window.userFavoriten);
+
+                                                // Menü schließen (siehe Antwort zuvor)
+                                                document.getElementById("customContextMenu").classList.add("d-none");
+
+                                                // Toast zeigen (richtiges Label!)
+                                                Swal.fire({
+                                                    toast: true,
+                                                    icon: isFavNow ? 'success' : 'info',
+                                                    title: isFavNow ? 'Zu Favoriten hinzugefügt' : 'Von Favoriten entfernt',
+                                                    timer: 1000,
+                                                    showConfirmButton: false
+                                                });
+                                            } else {
+                                                Swal.fire('Fehler', json.message || '', 'error');
+                                            }
+                                        });
+                                    }
+                                                    document.addEventListener("DOMContentLoaded", function () {
+                        const searchInput = document.getElementById("shareUserSearch");
+                        if (searchInput) {
+                            searchInput.addEventListener("input", function () {
+                                renderShareUserList(this.value);
+                            });
+                        }
+                    });
+
+                                                 let allCompanyUsers = [];
+                                    let selectedUserIds = [];
+                                    let shareDokumentId = null;
+
+                                                   function openShareModal(dokumentId) {
+                        shareDokumentId = dokumentId;
+                        selectedUserIds = [];
+                        const searchInput = document.getElementById("shareUserSearch");
+                        const userListDiv = document.getElementById("shareUserList");
+                        const modalEl = document.getElementById("shareModal");
+
+                        if (!searchInput || !userListDiv || !modalEl) {
+                            alert("Sharing Modal nicht korrekt im DOM!");
+                            return;
+                        }
+                        searchInput.value = "";
+                        userListDiv.innerHTML = "<div>Lädt...</div>";
+
+                        // User laden (wie gehabt)
+                        fetch('?handler=GetUsersFromCompany')
+                            .then(res => res.json())
+                            .then(users => {
+                                allCompanyUsers = users;
+                                renderShareUserList("");
+                            });
+
+                        // Bootstrap 5 Modal öffnen
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    }
+                                                   function closeShareModal() {
+                        const modalEl = document.getElementById("shareModal");
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }
+
+                                    function renderShareUserList(search) {
+                                        const container = document.getElementById("shareUserList");
+                                        let filtered = allCompanyUsers;
+                                        if (search) {
+                                            const s = search.trim().toLowerCase();
+                                            filtered = allCompanyUsers.filter(u =>
+                                                (u.name && u.name.toLowerCase().includes(s)) ||
+                                                (u.email && u.email.toLowerCase().includes(s)));
+                                        }
+                                        if (!filtered.length) {
+                                            container.innerHTML = "<div style='color:#999'>Keine Benutzer gefunden.</div>";
+                                            return;
+                                        }
+                                        container.innerHTML = filtered.map(u => `
+                                            <label>
+                                                <input type="checkbox" value="${u.id}" onchange="toggleShareUser(this)">
+                                                ${u.name} <span style="color:#90caf9; font-size:0.93em">(${u.email})</span>
+                                            </label>
+                                        `).join('');
+                                    }
+
+                                    function toggleShareUser(cb) {
+                                        const id = cb.value;
+                                        if (cb.checked) {
+                                            if (!selectedUserIds.includes(id)) selectedUserIds.push(id);
+                                        } else {
+                                            selectedUserIds = selectedUserIds.filter(x => x !== id);
+                                        }
+                                    }
+
+                                    document.getElementById("shareUserSearch").addEventListener("input", function () {
+                                        renderShareUserList(this.value);
+                                    });
+
+                                    function submitShare() {
+                                        if (!selectedUserIds.length) {
+                                            alert("Bitte mindestens einen Benutzer auswählen!");
+                                            return;
+                                        }
+                                                console.log("SENDEN:", { DokumentId: shareDokumentId, UserIds: selectedUserIds });
+
+                                        fetch('/Dokument/Index?handler=ShareDocument', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ DokumentId: shareDokumentId, UserIds: selectedUserIds })
+                                        })
+                                            .then(res => res.json())
+                                            .then(json => {
+                                                if (json.success) {
+                                                    alert("Datei wurde geteilt!");
+                                                    closeShareModal();
+                                                } else {
+                                                    alert("Fehler beim Teilen: " + (json.message || ""));
+                                                }
+                                            });
+                                    }
+                                            function toggleFolderNode(element) {
+               // Find .folder-content im gleichen Ordner
+               const folderContent = element.parentElement.querySelector('.folder-content');
+               if (!folderContent) return;
+               // Toggle Sichtbarkeit
+               if (folderContent.style.display === 'none') {
+                   folderContent.style.display = 'block';
+                   // Optional: Icon wechseln zu „offen“
+                   const icon = element.querySelector('i.bi-folder-fill');
+                   if (icon) icon.classList.remove('bi-folder-fill'), icon.classList.add('bi-folder2-open');
+               } else {
+                   folderContent.style.display = 'none';
+                   // Optional: Icon zurück zu „zu“
+                   const icon = element.querySelector('i.bi-folder2-open');
+                   if (icon) icon.classList.remove('bi-folder2-open'), icon.classList.add('bi-folder-fill');
+               }
+           }
+
+                     async function filterByFolder(folderPath) {
+              try {
+                  console.log("📂 Filter für Ordner:", folderPath);
+
+                  const tableBody = document.querySelector("#dokumenteTable tbody");
+                  if (!tableBody) {
+                      console.error("❌ Kein #dokumenteTable gefunden!");
+                      return;
+                  }
+
+                  // Loader anzeigen
+                  tableBody.innerHTML = `
+                      <tr>
+                          <td colspan="8" class="text-center text-info">
+                              ⏳ Lade Dokumente für <b>${folderPath}</b> ...
+                          </td>
+                      </tr>
+                  `;
+
+                  // AJAX Request
+                  const res = await fetch(`/Dokument/Index?handler=FilterByFolder&path=${encodeURIComponent(folderPath)}`);
+                  if (!res.ok) throw new Error("HTTP " + res.status);
+
+                  const html = await res.text();
+                  tableBody.innerHTML = html;
+
+                  // ✅ Explorer schließen nach erfolgreichem Laden
+                  closeExplorerPopup();
+
+              } catch (err) {
+                  console.error("❌ Fehler bei filterByFolder:", err);
+                  Swal.fire("Fehler", "Dokumente konnten nicht geladen werden", "error");
+              }
+          }
+
+
+
+                               function renameFolder() {
+                         const menu = document.getElementById("folderContextMenu");
+                         const folderPath = menu.getAttribute("data-folder-path");
+
+                         if (!folderPath) {
+                           Swal.fire('❌ Fehler', 'Kein gültiger Ordnerpfad', 'error');
+                           return;
+                         }
+
+                         const currentName = folderPath.split('/').pop();
+
+                         Swal.fire({
+                           title: '✏️ Ordner umbenennen',
+                           input: 'text',
+                           inputValue: currentName,
+                           showCancelButton: true,
+                           confirmButtonText: 'Umbenennen',
+                           cancelButtonText: 'Abbrechen',
+                           inputValidator: (value) => {
+                             if (!value || !value.trim()) return 'Name erforderlich';
+                             if (/[<>:"\/\\|?*]/.test(value)) return 'Ungültige Zeichen im Namen';
+                             if (value.trim().toLowerCase() === ".init") return 'Name ".init" ist reserviert';
+                             if (value.includes('..')) return 'Ungültiger Pfad';
+                           }
+                         }).then(result => {
+                           if (!result.isConfirmed) return;
+
+                           const newName = result.value.trim();
+                           // neuen Pfad bauen
+                           const parts = folderPath.split('/');
+                           parts.pop(); // letzter Teil = alter Name
+                           const parentPath = parts.join('/');
+                           const newFolderPath = (parentPath ? parentPath + '/' : '') + newName;
+
+                           fetch('?handler=RenameFolder', {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' },
+                             body: JSON.stringify({
+                               sourcePath: folderPath,
+                               targetPath: newFolderPath
+                             })
+                           })
+                           .then(res => res.json())
+                           .then(json => {
+                             if (json.success) {
+                               Swal.fire('✅ Ordner umbenannt', '', 'success').then(() => location.reload());
+                             } else {
+                               Swal.fire('❌ Fehler beim Umbenennen', json.message || '', 'error');
+                             }
+                           })
+                           .catch(err => {
+                             Swal.fire('❌ Technischer Fehler', err.message, 'error');
+                           });
+
+                           closeAllContextMenus();
+                         });
+                       }
+                     let contextFolderPath = null; // Aktueller Rechtsklick-Ordner
+
+                       function openFolderContextMenu(event, folderPath) {
+                           event.preventDefault();
+
+                           contextFolderPath = folderPath; // Merke aktuellen Ordner-Pfad!
+                           const menu = document.getElementById("folderContextMenu");
+
+                           // 👇 Diese Zeile hinzufügen!
+                           menu.setAttribute("data-folder-path", folderPath);
+
+                           // Menü anzeigen, da wo geklickt wurde
+                           menu.style.left = event.pageX + "px";
+                           menu.style.top = event.pageY + "px";
+                           menu.classList.remove("d-none");
+
+                           // Klick außerhalb des Menüs schließt es
+                           document.addEventListener("click", closeContextMenuOnClick);
+                       }
+
+                       function closeContextMenuOnClick(e) {
+                           const menu = document.getElementById("folderContextMenu");
+                           if (!menu.contains(e.target)) {
+                               menu.classList.add("d-none");
+                               document.removeEventListener("click", closeContextMenuOnClick);
+                           }
+                       }
+
+                       function CopyFolderDialog(folderPath) {
+                           // Immer contextFolderPath benutzen
+                           if (folderPath) {
+                               contextFolderPath = folderPath;
+                           }
+                           document.getElementById("copyFolderModal").style.display = "flex";
+                       }
+
+                       function closeCopyDialog() {
+                           document.getElementById("copyFolderModal").style.display = "none";
+                       }
+
+                                         function doCopyFolder() {
+                           const targetFolder = document.getElementById("targetFolderSelect").value;
+                           const newName = document.getElementById("copyFolderName").value?.trim() || "Kopie";
+                           if (!contextFolderPath || !targetFolder) {
+                               alert("Bitte wähle Quell- und Zielordner!");
+                               return;
+                           }
+                           if (!newName) {
+                               alert("Bitte gib einen Namen für den neuen Ordner ein!");
+                               return;
+                           }
+
+                           // 👉 Zielpfad korrekt zusammensetzen!
+                           let dest = targetFolder;
+                           if (!dest.endsWith("/")) dest += "/";
+                           dest += newName; // Zielordner inkl. neuen Ordnernamen
+
+                           // AJAX-Request an deinen Handler
+                           fetch('?handler=CopyFolder', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({
+                                   SourcePath: contextFolderPath, // Quell-Ordner
+                                   TargetPath: dest               // Ziel inkl. Unterordner
+                                   // KEIN NewName extra mehr nötig!
+                               })
+                           })
+                           .then(res => res.json())
+                           .then(data => {
+                               if (data.success) {
+                                   alert("Ordner erfolgreich kopiert!");
+                                   location.reload();
+                               } else {
+                                   alert("Fehler: " + (data.message || "Unbekannt"));
+                               }
+                               closeCopyDialog();
+                           })
+                           .catch(e => {
+                               alert("Fehler beim Kopieren!");
+                               closeCopyDialog();
+                           });
+
+                           console.log("Quelle:", contextFolderPath, "Ziel:", dest);
+                       }
+
+                                           function openPasteFileModal() {
+                           const folderSelect = document.getElementById("pasteTargetFolder");
+                           folderSelect.innerHTML = "";
+
+
+                           document.querySelectorAll(".folder-label span").forEach(folderSpan => {
+                               const folderPath = folderSpan.nextElementSibling?.textContent?.replace(/[\[\]]/g, "").trim();
+                               if (folderPath) {
+                                   const opt = document.createElement("option");
+                                   opt.value = folderPath;
+                                   opt.textContent = folderSpan.textContent;
+                                   folderSelect.appendChild(opt);
+                               }
+                           });
+
+
+                           new bootstrap.Modal(document.getElementById("pasteFileModal")).show();
+                       }
+
+
+                      document.addEventListener("DOMContentLoaded", function () {
+               // Hardcoded categories removed
+
+               const abteilungSelect = document.getElementById("pasteAbteilung");
+               const kategorieSelect = document.getElementById("pasteKategorie");
+               const newKategorieInput = document.getElementById("newKategorieInput");
+
+               abteilungSelect.addEventListener("change", function () {
+    kategorieSelect.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Kategorie wÃ¤hlen --";
+    kategorieSelect.appendChild(placeholder);
+
+    const selectedOption = this.options[this.selectedIndex];
+    const catsJson = selectedOption.getAttribute("data-categories");
+    if (catsJson) {
+        try {
+            const cats = JSON.parse(catsJson);
+            cats.forEach(k => {
+                const opt = document.createElement("option");
+                opt.value = k;
+                opt.textContent = k;
+                kategorieSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.error("Error parsing categories:", e);
+        }
+    }
+
+    const addNew = document.createElement("option");
+    addNew.value = "__new__";
+    addNew.textContent = "➕ Neue Kategorie hinzufügen...";
+    kategorieSelect.appendChild(addNew);
+
+    newKategorieInput.classList.add("d-none");
+    newKategorieInput.value = "";
+});
+
+               kategorieSelect.addEventListener("change", function () {
+                   if (this.value === "__new__") {
+                       newKategorieInput.classList.remove("d-none");
+                       newKategorieInput.focus();
+                   } else {
+                       newKategorieInput.classList.add("d-none");
+                       newKategorieInput.value = "";
+                   }
+               });
+           });
+
+
+                   function copyFileWithPrompt(filePath) {
+              sessionStorage.setItem("copiedFilePath", filePath);
+              sessionStorage.setItem("moveMode", "false");
+
+              const isChunked = filePath.startsWith("chunked://");
+              sessionStorage.setItem("isChunked", isChunked ? "true" : "false");
+
+
+              document.getElementById("pasteAbteilung").selectedIndex = 0;
+              document.getElementById("pasteKategorie").innerHTML = "<option value=''>-- Kategorie wählen --</option>";
+
+              const modal = new bootstrap.Modal(document.getElementById("pasteFileModal"));
+              modal.show();
+          }
+              async function confirmPasteFile() {
+              const abteilungSelect = document.getElementById("pasteAbteilung");
+              const abteilungId = abteilungSelect?.value || "";
+              const abteilungName = abteilungSelect?.options[abteilungSelect.selectedIndex]?.text?.trim() || "";
+
+              const kategorieSelect = document.getElementById("pasteKategorie");
+              let kategorie = kategorieSelect?.value?.trim() || "";
+
+
+              if (kategorie === "__new__") {
+                  const newKategorieInput = document.getElementById("newKategorieInput");
+                  kategorie = newKategorieInput?.value.trim() || "";
+              }
+
+
+              const copiedFile = sessionStorage.getItem("copiedFilePath");
+              const moveMode = sessionStorage.getItem("moveMode") === "true";
+
+              const firma = "@firmaName";
+              console.log("🏢 Aktuelle Firma:", firma);
+
+
+              if (!copiedFile) {
+                  return Swal.fire({
+                      toast: true, icon: 'warning',
+                      title: '⚠️ Keine Datei ausgewählt',
+                      timer: 2000, showConfirmButton: false,
+                      position: 'top-end'
+                  });
+              }
+
+              if (!abteilungId) {
+                  return Swal.fire({
+                      toast: true, icon: 'warning',
+                      title: '⚠️ Bitte Abteilung auswählen',
+                      timer: 2000, showConfirmButton: false,
+                      position: 'top-end'
+                  });
+              }
+
+
+              const finalKategorie = kategorie !== "" ? kategorie : "allgemein";
+              const fileName = copiedFile.split('/').pop();
+              const targetPath = `dokumente/${firma}/${abteilungName.toLowerCase()}/${finalKategorie.toLowerCase()}/${fileName}`;
+
+              console.log("➡️ Zielpfad:", targetPath);
+
+
+              const handler = moveMode ? "MoveFile" : "CopyFile";
+              const currentFileId = window.currentFileId || null;
+
+              try {
+                  const res = await fetch(`?handler=${handler}`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                          dokumentId: currentFileId,
+                          source: copiedFile,
+                          target: targetPath,
+                          abteilungId: parseInt(abteilungId),
+                          abteilung: abteilungName,
+                          kategorie: finalKategorie
+                      })
+                  });
+
+                  const json = await res.json();
+                  console.log("📦 Response:", json);
+
+                  if (json.success) {
+
+                      Swal.fire({
+                          toast: true,
+                          icon: 'success',
+                          title: moveMode ? '✅ Datei verschoben' : '✅ Datei kopiert',
+                          timer: 1800,
+                          showConfirmButton: false,
+                          position: 'top-end'
+                      });
+
+
+                      if (moveMode && json.movedFile) {
+                          addFileToExplorer(json.movedFile);
+
+
+                          const oldFileRow = document.querySelector(`[data-path="${copiedFile}"]`);
+                          if (oldFileRow) {
+                              oldFileRow.classList.add("fade-out");
+                              setTimeout(() => oldFileRow.remove(), 300);
+                          }
+                      }
+                      else if (!moveMode && json.newFile) {
+                          addFileToExplorer(json.newFile);
+                      }
+
+                      const modalEl = document.getElementById("pasteFileModal");
+                      const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                      if (modalInstance) modalInstance.hide();
+
+
+                      sessionStorage.removeItem("copiedFilePath");
+                      sessionStorage.removeItem("moveMode");
+                  }
+                  else {
+                      Swal.fire({
+                          toast: true,
+                          icon: 'error',
+                          title: '❌ Fehler beim Speichern',
+                          text: json.message || 'Unbekannter Fehler',
+                          timer: 2500,
+                          showConfirmButton: false,
+                          position: 'top-end'
+                      });
+                  }
+              }
+              catch (err) {
+                  console.error("❌ Fehler:", err);
+                  Swal.fire({
+                      toast: true,
+                      icon: 'error',
+                      title: '❌ Technischer Fehler',
+                      text: err.message,
+                      timer: 2500,
+                      showConfirmButton: false,
+                      position: 'top-end'
+                  });
+              }
+          }
+
+                                   function addFileToExplorer(file) {
+              try {
+                  console.log("🧩 addFileToExplorer() gestartet für:", file);
+
+
+                  const abteilungNameNorm = file.abteilung?.trim().toLowerCase() || "";
+                  const kategorieNameNorm = file.kategorie?.trim().toLowerCase() || "";
+
+
+                  const abteilungBlocks = document.querySelectorAll("li[data-abteilung]");
+                  let targetAbteilung = null;
+
+                  abteilungBlocks.forEach(block => {
+                      const abtName = block.getAttribute("data-abteilung")?.trim().toLowerCase();
+                      if (abtName === abteilungNameNorm) {
+                          targetAbteilung = block;
+                      }
+                  });
+
+                  if (!targetAbteilung) {
+                      console.warn(`⚠️ Abteilung '${file.abteilung}' introuvable — rechargement...`);
+                      location.reload();
+                      return;
+                  }
+
+                  let targetCategory = targetAbteilung.querySelector(
+                      `li[data-kategorie="${kategorieNameNorm}"]`
+                  );
+
+                  if (!targetCategory) {
+                      console.log(`📁 Catégorie '${file.kategorie}' absente dans '${file.abteilung}', création...`);
+
+                      const subFolders = targetAbteilung.querySelector(".subfolders");
+                      if (!subFolders) {
+                          console.warn(`⚠️ Aucun conteneur .subfolders dans '${file.abteilung}'`);
+                          location.reload();
+                          return;
+                      }
+
+                      const newFolderHTML = `
+                          <li data-kategorie="${kategorieNameNorm}">
+                              <div class="folder-header d-flex align-items-center justify-content-between">
+                                  <div class="fw-bold fs-5">
+                                      <i class="bi bi-folder-fill text-warning me-1"></i> ${file.kategorie}
+                                  </div>
+                                  <div><small class="text-muted">${file.path}</small></div>
+                              </div>
+                              <div class="folder-content mt-2">
+                                  <table class="table table-sm table-dark mb-0">
+                                      <tbody></tbody>
+                                  </table>
+                              </div>
+                          </li>
+                      `;
+                      subFolders.insertAdjacentHTML("beforeend", newFolderHTML);
+                      targetCategory = subFolders.querySelector(`li[data-kategorie="${kategorieNameNorm}"]`);
+                  }
+
+
+                  const folderContent = targetCategory.querySelector(".folder-content table tbody");
+                  if (!folderContent) {
+                      console.warn(`⚠️ Aucun <tbody> trouvé dans '${file.abteilung}/${file.kategorie}'`);
+                      return;
+                  }
+
+                  const newRow = document.createElement("tr");
+                  newRow.id = `file-${file.id}`;
+                  newRow.dataset.path = file.path;
+                  newRow.innerHTML = `
+                      <td class="fw-bold text-white align-middle">
+                          <i class="bi bi-file-earmark-text text-primary me-1"></i> ${file.name}
+                      </td>
+                      <td class="text-white small align-middle">${file.abteilung}</td>
+                      <td class="text-white small align-middle">${file.kategorie}</td>
+                      <td class="text-white small align-middle">${file.uploaded}</td>
+                      <td class="fw-bold text-white align-middle">
+                          <span class="badge bg-success">${file.status}</span>
+                      </td>
+                  `;
+
+                  folderContent.appendChild(newRow);
+
+                  console.log(`✅ Fichier ajouté dans Abteilung='${abteilungNameNorm}' / Kategorie='${kategorieNameNorm}'`);
+              } catch (err) {
+                  console.error("❌ Fehler in addFileToExplorer:", err);
+                  Swal.fire({
+                      toast: true,
+                      icon: 'error',
+                      title: 'Fehler',
+                      text: 'Beim Aktualisieren der Explorer-Ansicht ist ein Fehler aufgetreten.',
+                      timer: 2500,
+                      position: 'top-end',
+                      showConfirmButton: false
+                  });
+              }
+          }
+
+                     function copyFile(sourcePath, targetFolder) {
+                           const fileName = sourcePath.split('/').pop();
+                           const targetPath = `${targetFolder}/${fileName}`.replace(/\/+/g, '/');
+
+                           console.log("📋 Kopieren:", { sourcePath, targetFolder, targetPath });
+
+                           fetch('?handler=CopyFile', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ source: sourcePath, target: targetPath })
+                           })
+                           .then(res => res.json())
+                           .then(json => {
+                               console.log("📦 CopyFile Response:", json);
+                               if (json.success) {
+                                   Swal.fire('✅ Datei kopiert', '', 'success').then(() => location.reload());
+                               } else {
+                                   Swal.fire('❌ Fehler beim Kopieren', json.message || '', 'error');
+                               }
+                           })
+                           .catch(err => {
+                               console.error("❌ Fehler (CopyFile):", err);
+                               Swal.fire('❌ Technischer Fehler', err.message, 'error');
+                           });
+                       }
+
+                       function moveFile(sourcePath, targetFolder) {
+                           const fileName = sourcePath.split('/').pop();
+                           const targetPath = `${targetFolder}/${fileName}`.replace(/\/+/g, '/');
+
+                           console.log("📋 Verschieben:", { sourcePath, targetFolder, targetPath });
+
+                           fetch('?handler=MoveFile', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ source: sourcePath, target: targetPath })
+                           })
+                           .then(res => res.json())
+                           .then(json => {
+                               console.log("📦 MoveFile Response:", json);
+                               if (json.success) {
+                                   Swal.fire('✅ Datei verschoben', '', 'success').then(() => location.reload());
+                               } else {
+                                   Swal.fire('❌ Fehler beim Verschieben', json.message || '', 'error');
+                               }
+                           })
+                           .catch(err => {
+                               console.error("❌ Fehler (MoveFile):", err);
+                               Swal.fire('❌ Technischer Fehler', err.message, 'error');
+                           });
+                       }
+
+        function prepareMoveFileWithPrompt(filePath) {
+              sessionStorage.setItem("copiedFilePath", filePath);
+              sessionStorage.setItem("moveMode", "true");
+
+              const isChunked = filePath.startsWith("chunked://");
+              sessionStorage.setItem("isChunked", isChunked ? "true" : "false");
+
+              const modal = new bootstrap.Modal(document.getElementById("pasteFileModal"));
+              modal.show();
+          }
+
+                       function openExplorerPopup() {
+              const explorer = document.getElementById("explorerPopup");
+              explorer.classList.remove("d-none");
+          }
+
+                  function closeExplorerPopup() {
+              const explorer = document.getElementById("explorerPopup");
+              explorer.classList.add("d-none");
+          }
+
+                   document.addEventListener("show.bs.modal", function () {
+                       const explorer = document.getElementById("explorerPopup");
+                       if (explorer && explorer.style.display === "flex") {
+                           explorer.style.display = "none";
+                           explorer.setAttribute("data-auto-reopen", "true");
+                       }
+                   });
+
+
+                   document.addEventListener("hidden.bs.modal", function () {
+                       const explorer = document.getElementById("explorerPopup");
+                       if (explorer && explorer.getAttribute("data-auto-reopen") === "true") {
+                           explorer.style.display = "flex";
+                           explorer.removeAttribute("data-auto-reopen");
+                       }
+                   });
+
+                   document.addEventListener("shown.bs.modal", function () {
+                       closeExplorerPopup();
+                   });
+
+                   document.addEventListener("hidden.bs.modal", function () {
+                       openExplorerPopup();
+                   });
+
+          document.getElementById("filterAbteilung")?.addEventListener("change", function () {
+              const selectedOption = this.options[this.selectedIndex];
+              const categoriesJson = selectedOption.getAttribute("data-categories");
+
+              const kategorieSelect = document.getElementById("filterKategorie");
+              kategorieSelect.innerHTML = "<option value=''>-- Alle Kategorien --</option>";
+
+              if (categoriesJson) {
+                  try {
+                      const categories = JSON.parse(categoriesJson);
+                      categories.forEach(cat => {
+                          const option = document.createElement("option");
+                          option.value = cat;
+                          option.textContent = cat;
+                          kategorieSelect.appendChild(option);
+                      });
+                  } catch (e) {
+                      console.error("❌ Fehler beim Parsen der Kategorien:", e);
+                  }
+              }
+
+
+              filterDokumente();
+          });
+
+
+          document.getElementById("filterKategorie")?.addEventListener("change", filterDokumente);
+
+
+          document.getElementById("filterStartDate")?.addEventListener("change", filterDokumente);
+          document.getElementById("filterEndDate")?.addEventListener("change", filterDokumente);
+
+                      function filterDokumente() {
+              const abteilungQuery = document.getElementById("filterAbteilung")?.value.toLowerCase().trim() || "";
+              const kategorieQuery = document.getElementById("filterKategorie")?.value.toLowerCase().trim() || "";
+              const startDate = document.getElementById("filterStartDate")?.value || "";
+              const endDate = document.getElementById("filterEndDate")?.value || "";
+
+              const rows = document.querySelectorAll("#dokumenteTable tbody tr");
+
+              rows.forEach(row => {
+                  if (row.classList.contains("highlight-row")) return;
+
+                  const cells = row.querySelectorAll("td");
+                  const abteilung = cells[2]?.textContent.trim().toLowerCase() || "";
+                  const kategorie = cells[1]?.textContent.trim().toLowerCase() || "";
+                  const datum = cells[4]?.textContent.trim() || "";
+
+                  let show = true;
+
+                  if (abteilungQuery && abteilung !== abteilungQuery) show = false;
+                  if (kategorieQuery && kategorie !== kategorieQuery) show = false;
+
+                  if (startDate || endDate) {
+                      const parts = datum.split(".");
+                      if (parts.length === 3) {
+                          const fileDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                          if (startDate && fileDate < new Date(startDate)) show = false;
+                          if (endDate && fileDate > new Date(endDate)) show = false;
+                      }
+                  }
+
+                  row.style.display = show ? "" : "none";
+              });
+          }
+
+
+
+
+           function resetFilter() {
+               document.getElementById("filterAbteilung").value = "";
+               document.getElementById("filterKategorie").innerHTML = "<option value=''>📂 Alle Kategorien</option>";
+               document.getElementById("filterStartDate").value = "";
+               document.getElementById("filterEndDate").value = "";
+               filterDokumente();
+           }
+                function updateKategorien() {
+               const abteilungSelect = document.getElementById("filterAbteilung");
+               const kategorieSelect = document.getElementById("filterKategorie");
+
+
+               kategorieSelect.innerHTML = '<option value="">📂 Alle Kategorien</option>';
+
+               const selectedOption = abteilungSelect.options[abteilungSelect.selectedIndex];
+               const kategorien = selectedOption.getAttribute("data-categories");
+
+               if (kategorien) {
+                   try {
+                       const parsed = JSON.parse(kategorien);
+                       parsed.forEach(k => {
+                           const opt = document.createElement("option");
+                           opt.value = k;
+                           opt.textContent = k;
+                           kategorieSelect.appendChild(opt);
+                       });
+
+                       if (parsed.length === 1) {
+                           kategorieSelect.value = parsed[0];
+                       }
+                   } catch (e) {
+                       console.error("❌ Fehler beim Parsen Kategorien:", e);
+                   }
+               }
+
+               filterDokumente();
+           }
+            function openPreview(fileName, fileUrl, fileId, isVersion = false) {
+                const pane = document.getElementById("previewPane");
+                const frame = document.getElementById("previewFrame");
+                const customContainer = document.getElementById("customPreviewContainer");
+                const fallback = document.getElementById("previewFallback");
+                const download = document.getElementById("previewDownload");
+                const signBtn = document.getElementById("signBtn");
+                const title = document.getElementById("previewTitle");
+                const spinner = document.getElementById("previewSpinner");
+
+                title.innerText = fileName || "Unbekanntes Dokument";
+                pane.classList.remove("d-none");
+                
+                // 🔄 Reset
+                spinner.classList.remove("d-none");
+                frame.classList.add("d-none");
+                customContainer.classList.add("d-none");
+                fallback.classList.add("d-none");
+
+                // Cleanup previous content
+                customContainer.innerHTML = "";
+                frame.src = "";
+
+                const lower = (fileName || "").toLowerCase();
+                const isPdf = lower.endsWith(".pdf");
+                const isImage = lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".gif") || lower.endsWith(".svg");
+                
+                const isText = lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".json") || lower.endsWith(".xml") || lower.endsWith(".cs") || lower.endsWith(".js") || lower.endsWith(".css");
+                const isExcel = lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv");
+
+                let safeUrl = fileUrl || "";
+
+                // ✅ Proxy Redirect
+                if (
+                    isVersion ||
+                    !safeUrl ||
+                    safeUrl.trim() === "" ||
+                    safeUrl.startsWith("https://mikroplus.dscloud.me") ||
+                    safeUrl.startsWith("chunked://") ||
+                    safeUrl.includes("/chunks/") ||
+                    safeUrl.includes("/versionen/")
+                ) {
+                    console.warn("⚠️ Proxy-Redirect aktiv:", safeUrl);
+                    safeUrl = `/api/pdfproxy/view/${fileId}`; // Use 'view' which sets 'inline'
+                }
+
+                if (isPdf || isImage) {
+                    frame.src = safeUrl;
+                    frame.onload = () => {
+                        spinner.classList.add("d-none");
+                        frame.classList.remove("d-none");
+                    };
+                    // Fallback timeout
+                    setTimeout(() => {
+                         if(!spinner.classList.contains("d-none") && (isPdf || isImage)){
+                              spinner.classList.add("d-none");
+                              frame.classList.remove("d-none");
+                         }
+                    }, 5000);
+                } 
+                else if (isExcel) {
+                    // 📊 Excel Viewer (SheetJS)
+                    fetch(safeUrl)
+                        .then(res => res.arrayBuffer())
+                        .then(data => {
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            const html = XLSX.utils.sheet_to_html(worksheet, { id: "excelTable", editable: false });
+                            
+                            customContainer.innerHTML = html;
+                            
+                            // Style the table
+                            const table = customContainer.querySelector("table");
+                            if(table) {
+                                table.classList.add("table", "table-bordered", "table-striped", "small");
+                                table.style.width = "100%";
+                            }
+
+                            spinner.classList.add("d-none");
+                            customContainer.classList.remove("d-none");
+                        })
+                        .catch(err => {
+                            console.error("❌ Excel render error:", err);
+                            spinner.classList.add("d-none");
+                            fallback.classList.remove("d-none");
+                            download.href = safeUrl;
+                        });
+                }
+                else if (isText) {
+                    // 📝 Text Viewer
+                    fetch(safeUrl)
+                        .then(res => res.text())
+                        .then(text => {
+                            customContainer.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace; background: #f8f9fa; padding: 15px; border-radius: 5px;">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
+                            spinner.classList.add("d-none");
+                            customContainer.classList.remove("d-none");
+                        })
+                        .catch(err => {
+                             console.error("❌ Text render error:", err);
+                             spinner.classList.add("d-none");
+                             fallback.classList.remove("d-none");
+                             download.href = safeUrl;
+                        });
+                }
+                else {
+                    spinner.classList.add("d-none"); 
+                    fallback.classList.remove("d-none");
+                    download.href = safeUrl;
+                }
+
+                // Signatur Button Logic
+                if (isPdf) {
+                    signBtn.classList.remove("disabled");
+                    signBtn.onclick = function (e) {
+                        e.preventDefault();
+                        window.location.href = `/Dokument/Bearbeiten?Id=${encodeURIComponent(fileId)}`;
+                    };
+                } else {
+                    signBtn.onclick = function () {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "📷 Keine Signatur möglich",
+                            text: "Nur PDF-Dateien können signiert werden.",
+                            confirmButtonText: "OK"
+                        });
+                    };
+                }
+
+                console.log(`✅ Preview geöffnet über: ${safeUrl} (${isVersion ? "Version" : "Dokument"})`);
+            }
+
+
+
+           function closePreview() {
+               document.getElementById("previewPane").classList.add("d-none");
+               document.getElementById("previewFrame").src = "";
+           }
+                                       document.addEventListener("DOMContentLoaded", () => {
+              const uploadBtn = document.getElementById("uploadBtn");
+
+              if (!uploadBtn) {
+                  console.warn("⚠️ Aucun bouton #uploadBtn sur cette page, script ignoré.");
+                  return;
+              }
+
+              uploadBtn.addEventListener("click", async () => {
+                  const fileInput = document.createElement("input");
+                  fileInput.type = "file";
+                  fileInput.click();
+
+                  fileInput.onchange = () => {
+                      const file = fileInput.files[0];
+                      if (!file) return;
+
+                      uploadLargeFile(file);
+                  };
+              });
+          });
+
+
+
+
+
+          function openSignatureRequestModal(fileId, filePath) {
+              currentSignatureFileId = fileId;
+
+              // Modal öffnen
+              const modal = new bootstrap.Modal(document.getElementById('signatureRequestModal'));
+              modal.show();
+
+              // Benutzerliste laden
+                    fetch("/Dokument/Index?handler=GetUsersFromCompany")
+          // ⚠️ Backend-Endpunkt muss existieren!
+                  .then(res => res.json())
+                  .then(users => {
+                      const container = document.getElementById("signature-user-list");
+                      if (!users || users.length === 0) {
+                          container.innerHTML = `<div class="text-muted">Keine Benutzer verfügbar.</div>`;
+                          return;
+                      }
+                      container.innerHTML = users.map(u => `
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${u.id}" id="user_${u.id}">
+                            <label class="form-check-label" for="user_${u.id}">
+                              ${u.fullName} (${u.email})
+                            </label>
+                          </div>
+                      `).join('');
+                  })
+                  .catch(err => {
+                      document.getElementById("signature-user-list").innerHTML = `<div class="text-danger">❌ Fehler beim Laden der Benutzer</div>`;
+                      console.error("Fehler beim Laden der Benutzer:", err);
+                  });
+          }
+
+          function submitSignatureRequest() {
+              const selected = Array.from(document.querySelectorAll('#signature-user-list input:checked'))
+                  .map(cb => cb.value);
+
+              if (selected.length === 0) {
+                  alert("Bitte mindestens einen Benutzer auswählen!");
+                  return;
+              }
+
+              fetch('/Dokument/Index?handler=RequestSignature', {
+                  method: 'POST',
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ fileId: currentSignatureFileId, userIds: selected })
+              })
+              .then(res => {
+                  if (!res.ok) throw new Error("Fehler beim Senden der Anfrage");
+                  return res.json();
+              })
+              .then(result => {
+                  alert("✅ Anfrage erfolgreich gesendet!");
+                  bootstrap.Modal.getInstance(document.getElementById('signatureRequestModal')).hide();
+              })
+              .catch(err => {
+                  alert("❌ Fehler: " + err.message);
+              });
+          }
+                  function toggleSubmenu(element) {
+              const submenu = element.nextElementSibling;
+              if (submenu.classList.contains("d-none")) {
+                  submenu.classList.remove("d-none");
+              } else {
+                  submenu.classList.add("d-none");
+              }
+          }
+
+
+          window.showFileContextMenuDynamic = showFileContextMenuDynamic;
+          window.openPreview = openPreview;
+
+
+
+    </script>
+
+
+}
+
+
+

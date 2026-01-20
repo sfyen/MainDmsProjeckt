@@ -1,0 +1,3454 @@
+﻿@using DmsProjeckt.Data
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var currentUser = User.Identity.IsAuthenticated ? await UserManager.GetUserAsync(User) : null;
+    string userFullName = (!string.IsNullOrWhiteSpace(currentUser?.Vorname) || !string.IsNullOrWhiteSpace(currentUser?.Nachname))
+      ? $"{currentUser?.Vorname} {currentUser?.Nachname}".Trim()
+      : "Benutzer";
+    string userProfileImageUrl = !string.IsNullOrWhiteSpace(currentUser?.ProfilbildUrl)
+    ? $"/Profile/GetAvatar?v={DateTime.Now.Ticks}"
+    : "/images/default-profile.png";
+
+    var showSidebar = !(ViewData["HideSidebar"] as bool? ?? false);
+}
+
+<!DOCTYPE html>
+<script>
+    // 🚀 Frühestmöglich ausführen
+    (function () {
+      try {
+        const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
+        if (collapsed) {
+          document.documentElement.setAttribute("data-sidebar", "collapsed");
+          document.documentElement.classList.add("sidebar-collapsed-initial");
+        }
+        // Seite vorübergehend unsichtbar, damit nichts "aufblitzt"
+        document.documentElement.style.visibility = "hidden";
+      } catch (e) { }
+    })();
+</script>
+@{
+    var isCollapsed = false;
+    try
+    {
+        var cookie = Context.Request.Cookies["sidebarCollapsed"];
+        isCollapsed = cookie == "true";
+    }
+    catch { }
+}
+<html lang="en" data-sidebar="@(isCollapsed ? "collapsed" : "")">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DmsProjeckt</title>
+
+    <!-- CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DmsProjeckt.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <!-- Bootstrap JS Bundle (inclut Dropdown, Modal, Popover, etc.) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        html[data-sidebar="collapsed"] .sidebar {
+            width: 48px !important;
+            min-width: 48px !important;
+            max-width: 48px !important;
+        }
+
+        html[data-sidebar="collapsed"] .sidebar-title,
+        html[data-sidebar="collapsed"] .sidebar-content,
+        html[data-sidebar="collapsed"] .sidebar-user-dropdown,
+        html[data-sidebar="collapsed"] .notif-btn {
+            display: none !important;
+        }
+
+        html[data-sidebar="collapsed"] #layout {
+            margin-left: 48px !important;
+        }
+        /* --- Sidebar Übergang / Animation --- */
+        .sidebar {
+            transition: width 0.25s cubic-bezier(.45,1.3,.52,1), min-width 0.25s cubic-bezier(.45,1.3,.52,1), max-width 0.25s cubic-bezier(.45,1.3,.52,1);
+        }
+
+        .content-area {
+            transition: margin-left 0.25s cubic-bezier(.45,1.3,.52,1);
+        }
+
+        /* --- Collapsed Zustand --- */
+        html[data-sidebar="collapsed"] .sidebar {
+            width: 48px !important;
+            min-width: 48px !important;
+            max-width: 48px !important;
+            padding: 0;
+        }
+
+        html[data-sidebar="collapsed"] .sidebar-title,
+        html[data-sidebar="collapsed"] .sidebar-content,
+        html[data-sidebar="collapsed"] .sidebar-user-dropdown,
+        html[data-sidebar="collapsed"] .notif-btn {
+            display: none !important;
+        }
+
+        /* --- Exakter Layoutausgleich beim Collapse --- */
+        html[data-sidebar="collapsed"] #layout {
+            margin-left: 48px !important;
+        }
+
+        /* --- Fix für Content-Shift (gleiche Basis wie Sidebarbreite) --- */
+        .content-area {
+            margin-left: 260px;
+        }
+
+        html[data-sidebar="collapsed"] .content-area {
+            margin-left: 48px !important;
+        }
+
+        /* --- Toggle-Button richtig zentrieren --- */
+        
+
+            /* --- Leichte Bewegung beim Klick (optional) --- */
+            .sidebar-toggle-btn:active {
+                transform: scale(0.9);
+            }
+
+        /* --- Hamburger Balken sanft animieren --- */
+        .sidebar-hamburger span {
+            transition: width 0.2s ease, background 0.15s ease;
+        }
+
+        html[data-sidebar="collapsed"] .sidebar-hamburger span {
+            width: 14px;
+        }
+
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            max-width: 260px;
+            background-color: #e8e8e8;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.24);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1200;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            padding: 0 18px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .sidebar-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #000;
+            text-transform: uppercase;
+            
+            letter-spacing: 1px;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            position: relative;
+        }
+
+        .notif-btn {
+            background: none !important;
+            border: none !important;
+            color: #000 !important;
+            font-size: 1.3em;
+            margin-right: 0.15rem;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            height: 36px;
+            position: relative;
+            z-index: 2;
+            transition: color 0.18s;
+        }
+
+            .notif-btn:hover {
+                color: #000;
+            }
+
+       
+
+        .sidebar-hamburger {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 22px;
+            height: 18px;
+            gap: 3.5px;
+        }
+
+            .sidebar-hamburger span {
+                display: block;
+                height: 3px;
+                width: 100%;
+                background: #666;
+                border-radius: 2px;
+                transition: 0.18s;
+            }
+
+   
+        .sidebar-content {
+            flex: 1 1 auto;
+            padding: 1.2rem 1rem 0.2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            min-height: 0;
+            overflow: visible;
+            padding-bottom: 0;
+        }
+
+        .menu-section {
+            padding-top: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sidebar .menu-section > h5 {
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            color: #000 !important;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 0.4rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            margin-top: 0;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            font-size: 15px;
+            color: #000;
+            text-decoration: none;
+            border-radius: 7px;
+            transition: background 0.19s, color 0.15s;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+
+            .sidebar a i {
+                margin-right: 10px;
+                min-width: 22px;
+                text-align: center;
+                font-size: 1.16em;
+            }
+
+            .sidebar a:hover,
+            .sidebar a.active {
+                background-color: #d0d0d0;
+                color: #000;
+            }
+
+        /* --- Dropdown Menü (Immer geschlossen bis .open) --- */
+        .menu-dropdown {
+            display: none;
+            flex-direction: column;
+            padding-left: 16px;
+            gap: 1px;
+        }
+
+            .menu-dropdown.open {
+                display: flex !important;
+            }
+
+            .menu-dropdown a {
+                font-size: 14px;
+                color: #000;
+                padding: 7px 10px;
+                background: none;
+                border-radius: 5px;
+            }
+
+                .menu-dropdown a:hover {
+                    color: #000;
+                    background: #c0c0c0;
+                }
+
+        .menu-dropdown-toggle {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 7px;
+            color: #000;
+            font-weight: 500;
+            font-size: 15px;
+            background: none;
+            border: none;
+            transition: background 0.18s, color 0.13s;
+        }
+
+            .menu-dropdown-toggle:hover {
+                background: #c0c0c0;
+                color: #000;
+            }
+
+            .menu-dropdown-toggle i.arrow {
+                margin-left: auto;
+                font-size: 1.13em;
+                transition: transform 0.2s;
+            }
+
+            .menu-dropdown-toggle.open i.arrow {
+                transform: rotate(90deg);
+            }
+
+        /* Sidebar User Bereich immer ganz unten */
+        .sidebar-user-dropdown {
+            margin: 1.1rem 0 0 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+            margin-top: auto !important;
+            
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.95rem;
+            cursor: pointer;
+            width: 100%;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: background 0.15s;
+            position: relative;
+            background: none;
+        }
+
+            .user-info:hover,
+            .sidebar-user-dropdown.open .user-info {
+                background: #f0f0f0;
+            }
+
+        .sidebar-profile-pic {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e0e0e0;
+            border: 2px solid #ccc;
+        }
+
+        .sidebar-user-name {
+            color: #000;
+            font-weight: 600;
+            font-size: 1.08rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 110px;
+        }
+
+        .dropdown-caret {
+            margin-left: auto;
+            font-size: 1.19em;
+            color: #000;
+            transition: transform 0.19s;
+        }
+
+        .sidebar-user-dropdown.open .dropdown-caret {
+            transform: rotate(180deg);
+        }
+
+        .user-dropdown-menu {
+            position: absolute;
+            bottom: 54px;
+             right: 0;
+            min-width: 192px;
+            background: white;
+            border-radius: 13px;
+            box-shadow: 0 -4px 18px rgba(0,0,0,0.21);
+            display: none;
+            flex-direction: column;
+            padding: 9px 0;
+            z-index: 1000;
+            border: 1px solid #e0e0e0;
+            animation: slideUp .18s cubic-bezier(.45,1.42,.66,.96);
+        }
+
+        .sidebar-user-dropdown.open .user-dropdown-menu {
+            display: flex !important;
+        }
+
+        .user-dropdown-menu a {
+            padding: 9px 22px;
+            color: #000;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+            transition: background 0.15s, color 0.13s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+            .user-dropdown-menu a:hover {
+                background: #d0d0d0;
+                color: #000;
+            }
+
+        /* Sidebar Collapsed Styles */
+     
+
+        /* Kleine Feinheiten */
+        .favoriten-placeholder {
+            background: transparent;
+            border-radius: 6px;
+        }
+
+        /* Drop Animation */
+        /* Notification Dropdown */
+        .notification-dropdown {
+            display: none; /* JS steuert Anzeige via .open */
+            position: absolute;
+            top: 100%; /* Direkt UNTER der Glocke */
+            left: 0; /* ANFANG bei Glocke */
+            right: auto;
+            transform: none;
+            margin-top: 8px;
+            width: 350px;
+            min-height: 180px;
+            max-height: 500px;
+            background: white;
+            color: #000;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.2), 0 1.5px 4px #10e6ff44;
+            overflow: hidden;
+            z-index: 3000 !important;
+            flex-direction: column;
+            padding: 0;
+        }
+
+            .notification-dropdown.open {
+                display: flex !important;
+            }
+
+        /* User Dropdown */
+        .sidebar-user-dropdown .user-dropdown-menu {
+            display: none;
+            position: absolute;
+             right: 0;
+            min-width: 192px;
+            background: white;
+            border-radius: 13px;
+            box-shadow: 0 -4px 18px rgba(0,0,0,0.21);
+            flex-direction: column;
+            padding: 9px 0;
+            z-index: 1000;
+            border: 1px solid #e0e0e0;
+            animation: slideUp .18s cubic-bezier(.45,1.42,.66,.96);
+            bottom: 54px;
+        }
+
+        .sidebar-user-dropdown.open .user-dropdown-menu {
+            display: flex !important;
+        }
+
+        .notif-btn {
+            position: relative;
+            /* ...dein sonstiges notif-btn styling... */
+        }
+
+        #notifBadge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.73em;
+            min-width: 18px;
+            height: 18px;
+            line-height: 18px;
+            padding: 0 5px;
+            border-radius: 10px;
+            z-index: 2;
+            display: none;
+        }
+
+        /* Notification Dropdown kompakt */
+        .notification-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 340px;
+            min-height: 100px;
+            max-height: 430px;
+            background: white;
+            color: #000;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.15), 0 1.5px 8px #0002;
+            overflow: hidden;
+            z-index: 3000 !important;
+            flex-direction: column;
+            padding: 0;
+            font-family: 'Montserrat',sans-serif;
+            border: 1px solid #e0e0e0;
+        }
+
+            .notification-dropdown.open {
+                display: flex !important;
+            }
+
+        /* Header kompakter, kleinere Font */
+        .dropdown-header.sticky-dropdown-header {
+            background: #e8e8e8;
+            padding: 13px 16px 10px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 1.09rem;
+            letter-spacing: 0.01em;
+            min-height: unset;
+        }
+
+            .dropdown-header.sticky-dropdown-header span {
+                color: #000;
+                font-weight: 700;
+                font-size: 1.09rem;
+                letter-spacing: 0.01em;
+            }
+
+        /* Buttons: Settings & Check kleiner und kompakt */
+        .dropdown-header .btn-link,
+        .dropdown-header .settings-icon {
+            color: #000;
+            background: none !important;
+            border: none !important;
+            font-size: 1.15em;
+            margin-left: 2px;
+            transition: color 0.14s;
+            padding: 2px 6px 2px 6px;
+            box-shadow: none;
+        }
+
+            .dropdown-header .btn-link:hover,
+            .dropdown-header .settings-icon:hover {
+                color: #000;
+            }
+
+        /* List Padding kleiner */
+        .notif-list {
+            flex: 1;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 10px 6px 10px 8px;
+            background: transparent;
+        }
+
+        /* Notification-Card KOMPAKT, Border-Accent wie im Bild */
+        .notif-item, .dropdown-item {
+            background: white;
+            border-radius: 12px;
+            padding: 11px 18px 9px 15px;
+            margin-bottom: 12px;
+            font-size: 0.97rem;
+            box-shadow: 0 2px 6px rgba(30, 136, 229, 0.1);
+            color: #000;
+            border-left: 3px solid #666;
+            transition: background 0.16s;
+            display: block;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+            .notif-item:last-child, .dropdown-item:last-child {
+                margin-bottom: 0;
+            }
+
+            .notif-item.unread,
+            .dropdown-item.fw-bold {
+                background: #d0d0d0;
+                border-left: 3px solid #666;
+                font-weight: 600;
+            }
+
+            .notif-item time, .dropdown-item time {
+                color: #000;
+                font-size: 0.87em;
+                margin-top: 4px;
+                display: block;
+                font-family: 'Montserrat',sans-serif;
+                opacity: 0.84;
+            }
+
+            /* Button 'Als gelesen markieren' sehr klein und cyan */
+            .dropdown-item button,
+            .notif-item button {
+                background: none;
+                color: #000;
+                border: none;
+                font-size: 0.87em;
+                margin-top: 4px;
+                padding: 0 2px;
+            }
+
+                .dropdown-item button:hover,
+                .notif-item button:hover {
+                    color: #000;
+                    text-decoration: underline;
+                }
+
+        /* Links im Dropdown */
+        .dropdown-header .btn-link,
+        .dropdown-header .settings-icon {
+            color: #000;
+            background: none !important;
+            border: none !important;
+            font-size: 1em; /* Noch kleiner! */
+            width: 28px; /* Sehr klein, quadratisch */
+            height: 28px;
+            min-width: 0;
+            min-height: 0;
+            padding: 0;
+            margin-left: 1px;
+            margin-right: 1px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            box-shadow: none;
+            transition: color 0.14s, background 0.14s;
+            line-height: 1;
+        }
+
+            .dropdown-header .btn-link:hover,
+            .dropdown-header .settings-icon:hover {
+                color: #000;
+                background: #0f1921;
+            }
+
+        .dropdown-header .bi {
+            font-size: 1.13em; /* Auch das Icon selbst noch etwas kleiner */
+            vertical-align: middle;
+        }
+
+        .sidebar,
+        
+        .sidebar .sidebar-content,
+        .sidebar .menu-section,
+        .sidebar .menu-section > h5,
+        .sidebar a,
+        .sidebar a i,
+        .sidebar .sidebar-user-name,
+        .sidebar .user-info,
+        .sidebar .user-dropdown-menu a {
+            font-size: 14px !important; /* Oder z.B. 15px oder 0.95em – taste dich ran! */
+            /* Kein line-height nötig, da padding/margin das regelt */
+        }
+        /* Für kleine Screens */
+        .content-area {
+            margin-left: 260px;
+            transition: margin-left 0.2s cubic-bezier(.44,1.2,.67,1.01);
+        }
+
+       
+
+        .notif-item, .dropdown-item {
+            background: white;
+            border-radius: 12px;
+            padding: 11px 18px 9px 15px;
+            margin-bottom: 12px;
+            font-size: 0.97rem;
+            box-shadow: 0 2px 6px rgba(30, 136, 229, 0.1);
+            color: #000;
+            border-left: 3px solid #666;
+            transition: background 0.16s;
+            display: flex;
+            flex-direction: column; /* ⬅️ Mehrzeiliges Layout */
+            word-wrap: break-word; /* ⬅️ Lange Wörter umbrechen */
+            overflow-wrap: break-word;
+            white-space: normal; /* ⬅️ Kein erzwungener Einzeiler */
+            max-width: 100%;
+        }
+
+            .dropdown-item div,
+            .notif-item div {
+                white-space: normal;
+                word-break: break-word;
+            }
+        /* Für kleine Screens */
+        .content-area {
+            margin-left: 260px;
+            transition: margin-left 0.2s cubic-bezier(.44,1.2,.67,1.01);
+        }
+
+            /* DIESE ZEILEN HINZUFÜGEN: */
+            .content-area.no-sidebar {
+                margin-left: 0 !important;
+            }
+
+        
+        /* 🚫 Deaktiviert Transition nur beim Initialen Laden */
+        .no-transition * {
+            transition: none !important;
+        }
+
+        /* --- Toggle-Button präzise zentrieren und kräftiger darstellen --- */
+        /* === 🎯 SIDEBAR TOGGLE FIX (Pixelgenau zentriert) === */
+
+        /* === ✅ FINAL FIX: Sidebar Toggle Button perfekt zentriert === */
+
+        /* Standard Sidebar Action Layout */
+        .sidebar-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Standard, wenn Sidebar offen */
+            gap: 0.35rem;
+            position: relative;
+            width: 100%;
+        }
+
+        /* Button */
+        .sidebar-toggle-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            transition: background 0.25s ease, transform 0.25s ease;
+        }
+
+            .sidebar-toggle-btn:hover {
+                background: rgba(0, 0, 0, 0.08);
+            }
+
+        /* Hamburger */
+        .sidebar-hamburger {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            width: 18px;
+            height: 14px;
+        }
+
+            .sidebar-hamburger span {
+                display: block;
+                width: 100%;
+                height: 2px;
+                background: #222;
+                border-radius: 1px;
+                transition: all 0.25s ease;
+            }
+
+        /* --- COLLAPSED STATE FIX --- */
+        html[data-sidebar="collapsed"] .sidebar-actions {
+            justify-content: center !important; /* Button exakt in der Mitte */
+        }
+
+        html[data-sidebar="collapsed"] .sidebar-toggle-btn {
+            margin: 0 auto;
+            position: relative;
+            left: 0;
+            transform: none;
+        }
+
+        html[data-sidebar="collapsed"] .sidebar {
+            width: 48px !important;
+            min-width: 48px !important;
+            max-width: 48px !important;
+        }
+
+        /* Hamburger optisch in Balance bringen */
+        html[data-sidebar="collapsed"] .sidebar-hamburger {
+            transform: translateX(-0.5px);
+        }
+
+        /* === 🎯 Fix: Kleineren Abstand links, wenn Sidebar eingeklappt ist === */
+        html[data-sidebar="collapsed"] .content-area {
+            margin-left: 24px !important; /* Sidebar ist 48px → Content näher ranrücken */
+            padding-left: 0.5rem !important; /* Bootstrap px-4 (1rem) reduzieren */
+        }
+
+        /* === KALENDER DROPDOWN === */
+        /* === 📅 DROPDOWN-KALENDER === */
+        .calendar-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 3000;
+            font-family: 'Montserrat', sans-serif;
+            animation: fadeIn 0.18s ease;
+        }
+
+            .calendar-dropdown.open {
+                display: block;
+            }
+
+        /* === 📐 Grundlayout === */
+        .calendar-inner-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            height: 360px;
+            overflow: hidden;
+        }
+
+        /* === LINKER TEIL – MONATSKALENDER === */
+        .calendar-left {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Header */
+        .dropdown-header.sticky-dropdown-header {
+            background: #f4f4f4;
+            padding: 10px 14px;
+            border-bottom: 1px solid #ddd;
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-header .btn-link {
+            color: #000;
+            border: none;
+            font-size: 1rem;
+            padding: 4px 6px;
+        }
+
+        /* === Wochentage === */
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.83rem;
+            color: #444;
+            margin-top: 8px;
+            margin-bottom: 6px;
+        }
+
+        /* === Kalenderraster === */
+        #calendarGrid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        /* === Tageszellen === */
+        .calendar-day {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            font-size: 0.9rem;
+            margin: 0 auto;
+            transition: background 0.25s ease, border-radius 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+        }
+
+            .calendar-day:hover {
+                background: #f0f0f0;
+                transform: scale(1.05);
+            }
+
+            .calendar-day.today {
+                background: #b8a5ff !important;
+                color: #fff;
+                font-weight: 600;
+                border-radius: 10px;
+            }
+
+            .calendar-day.other-month {
+                opacity: 0.35;
+            }
+
+            .calendar-day.weekend {
+                color: #777;
+            }
+
+            .calendar-day.selected {
+                background: #f2f2f2 !important;
+                border-radius: 50%;
+                color: #000;
+                font-weight: 600;
+                transform: scale(1.1);
+                box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+            }
+
+                .calendar-day.selected:active {
+                    transform: scale(0.95);
+                }
+
+                .calendar-day.selected:hover {
+                    background: #e6e6e6 !important;
+                }
+
+        /* Event-Punkt unter Tagen */
+        .calendar-event-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #0d6efd;
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* === RECHTER TEIL – TAGESANSICHT === */
+        .day-view-panel {
+            width: 200px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.05);
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            height: 100%;
+            max-height: 360px;
+        }
+
+        /* === STUNDENLISTE === */
+        .day-hours-list {
+            position: relative;
+            height: 960px; /* 24h × 40px */
+            border-left: 2px solid #eee;
+            display: flex;
+            flex-direction: column;
+            padding: 6px 10px;
+        }
+
+        /* === STUNDE === */
+        .day-hour {
+            position: relative;
+            height: 40px;
+            border-bottom: 1px dashed #ddd;
+            display: flex;
+            align-items: center;
+            padding-left: 45px;
+            font-size: 0.9rem;
+            color: #333;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+            z-index: 2;
+        }
+
+            .day-hour:hover {
+                background: #f5f5f5;
+            }
+
+            /* Add-Button (rechts) */
+            .day-hour .add-btn {
+                position: absolute;
+                right: 6px;
+                top: 2px;
+                background: none;
+                border: none;
+                color: #777;
+                font-size: 1rem;
+                cursor: pointer;
+                display: none;
+            }
+
+            .day-hour:hover .add-btn {
+                display: inline;
+            }
+
+        /* Stundenlabel */
+        .hour-label {
+            position: absolute;
+            left: 0;
+            width: 40px;
+            text-align: right;
+            font-weight: 500;
+            color: #555;
+        }
+
+        /* === TERMINLISTE IM TAG === */
+        .day-event {
+            font-size: 0.8rem;
+            background: #d6eaff;
+            border-radius: 6px;
+            margin: 2px 0 2px 8px;
+            padding: 2px 4px;
+            color: #004085;
+            cursor: pointer;
+            width: 90%;
+            height: 16px;
+            margin-left: 10%;
+            transition: transform 0.1s ease;
+        }
+
+            .day-event:hover {
+                background: #cce5ff;
+                transform: scale(1.05);
+            }
+
+        /* === FORMULARPANEL === */
+        .event-form-panel {
+            display: none;
+            flex-direction: column;
+            width: 220px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.05);
+            padding: 10px 12px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+            .event-form-panel h6 {
+                font-weight: 600;
+                margin-bottom: 8px;
+                font-size: 0.9rem;
+            }
+
+            .event-form-panel .form-group {
+                margin-bottom: 6px;
+            }
+
+                .event-form-panel .form-group label {
+                    font-size: 0.8rem;
+                    font-weight: 500;
+                    margin-bottom: 2px;
+                    display: block;
+                }
+
+            /* Eingabefelder */
+            .event-form-panel input.form-control-sm,
+            .event-form-panel select.form-select-sm,
+            .event-form-panel textarea.form-control-sm {
+                font-size: 0.78rem !important;
+                height: 24px !important;
+                padding: 2px 5px !important;
+                border: 1px solid #ccc !important;
+                border-radius: 5px !important;
+                background-color: #ffffff !important;
+                color: #000 !important;
+                line-height: 1.2 !important;
+                box-shadow: none !important;
+            }
+
+            /* Dropdown (kompakt) */
+            .event-form-panel select.form-select-sm {
+                appearance: none !important;
+                background-repeat: no-repeat;
+                background-position: right 6px center;
+                background-size: 12px;
+                padding-right: 20px !important;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            }
+
+                .event-form-panel select.form-select-sm:focus,
+                .event-form-panel input:focus,
+                .event-form-panel textarea:focus {
+                    border-color: #8c68ff !important;
+                    box-shadow: 0 0 0 2px rgba(140, 104, 255, 0.25) !important;
+                    outline: none !important;
+                }
+
+            .event-form-panel textarea.form-control-sm {
+                height: 50px !important;
+                resize: vertical;
+            }
+
+            .event-form-panel .btn {
+                font-size: 0.78rem;
+                padding: 4px 6px;
+                height: 26px;
+                border-radius: 5px;
+            }
+
+        /* === Uhrzeitfelder === */
+        #eventTime.form-control,
+        #eventStartTime,
+        #eventEndTime {
+            background-color: #fff !important;
+            border: 1px solid #ccc !important;
+            border-radius: 6px !important;
+            height: 24px !important;
+            font-size: 0.78rem !important;
+            padding: 2px 6px !important;
+            color: #000 !important;
+            line-height: 1.2 !important;
+        }
+
+            #eventTime:focus,
+            #eventStartTime:focus,
+            #eventEndTime:focus {
+                border-color: #8c68ff !important;
+                box-shadow: 0 0 0 2px rgba(140, 104, 255, 0.25) !important;
+                outline: none !important;
+            }
+
+        /* === Checkboxen / Radiobuttons === */
+        .form-check-input {
+            width: 2.5em;
+            height: 1.3em;
+            cursor: pointer;
+        }
+
+            .form-check-input:checked {
+                background-color: #8c68ff;
+                border-color: #8c68ff;
+            }
+
+        /* === TERMINBLOCK (Tagesansicht) === */
+        /* === 🌈 Terminblöcke (Google Calendar Style) === */
+        .day-hour {
+            position: relative;
+            display: flex;
+            gap: 4px; /* Abstand bei mehreren Terminen */
+            padding-right: 6px;
+        }
+
+        .day-event-block {
+            flex: 1; /* macht volle Breite, wenn nur 1 Event */
+            background: var(--event-color, rgba(255, 183, 77, 0.85)); /* leicht transparent */
+            border-radius: 6px;
+            padding: 4px 6px 4px 10px; /* Platz für Text */
+            font-size: 0.83rem;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            position: relative;
+            box-sizing: border-box;
+            min-height: 30px;
+            color: #000;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+            /* ✨ Farbige Seitenleiste links */
+            .day-event-block::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 5px; /* Dicke der linken Leiste */
+                height: 100%;
+                background: #f57c00; /* Akzentfarbe */
+                border-radius: 6px 0 0 6px;
+            }
+
+            /* Hover Effekt */
+            .day-event-block:hover {
+                transform: scale(1.02);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                cursor: pointer;
+            }
+
+
+        .day-hour {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            height: 40px;
+            border-bottom: 1px dashed #ddd;
+            transition: background 0.2s ease;
+        }
+
+        /* Standardmäßiger + Bereich */
+        /* === Fixierte + Symbol Zone === */
+        .hour-action-area {
+            position: absolute;
+            right: -26px;
+            top: 75%;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+            .hour-action-area button.add-btn {
+                background: none;
+                border: none;
+                color: #777;
+                font-size: 1.1rem; /* leicht größer für visuelle Balance */
+                cursor: pointer;
+                padding: 0;
+                line-height: 1;
+                transition: color 0.2s ease, transform 0.1s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+        .day-hour:hover .hour-action-area {
+            opacity: 1;
+        }
+
+
+
+
+
+        /* Gesamtcontainer für Tagesansicht */
+        .day-view-panel {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            width: 230px; /* 👈 Fenster breiter gemacht */
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+            overflow-x: hidden; /* 👈 Keine horizontale Scrollbar */
+            max-height: 360px;
+            padding-right: 25px; /* 👈 Platz für das + Symbol außerhalb */
+        }
+
+        /* Die Stundenliste bleibt gleich */
+        .day-hours-list {
+            position: relative;
+            width: 200px; /* 👈 bleibt fix, wird nicht vergrößert */
+            border-left: 2px solid #eee;
+            background: #fff;
+        }
+
+
+
+        .event-title {
+            pointer-events: none;
+        }
+
+        .day-hours-list {
+            position: relative;
+        }
+
+        
+
+
+            .day-event-block.child-event {
+                background: rgba(255, 183, 77, 0.9) !important;
+                border-radius: 6px;
+                padding-left: 8px;
+                overflow: hidden;
+            }
+
+                .day-event-block.child-event::before {
+                    background: #f57c00;
+                    opacity: 0.9;
+                }
+
+        /* === 📅 Fixierter Tages-Header === */
+        .day-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .day-header-date {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .day-header-events {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            position: relative;
+        }
+
+        .all-day-event {
+            flex: 1; /* gleiche Breite für alle Events */
+            background: #ffb74d;
+            border-radius: 6px;
+            padding: 3px 6px;
+            font-size: 0.78rem;
+            color: #000;
+            cursor: pointer;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            position: relative;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+            /* farbiger Streifen links wie bei Stunden-Terminen */
+            .all-day-event::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 5px;
+                height: 100%;
+                background: #f57c00;
+                border-radius: 6px 0 0 6px;
+            }
+
+            /* Hover-Effekt */
+            .all-day-event:hover {
+                transform: scale(1.02);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            }
+
+
+        .invite-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
+        .invite-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .selected-participants {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .participant-chip {
+            background: #e0e0ff;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+            .participant-chip span {
+                margin-left: 6px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+        /* === INVITE DROPDOWN (modern) === */
+        /* Wrapper = Positionierungsanker */
+        .invite-dropdown-wrapper {
+            position: relative;
+            display: inline-flex; /* ⬅️ WICHTIG */
+            align-items: center;
+        }
+
+
+        /* Dropdown selbst */
+        .invite-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 220px; /* ✅ FESTE, KOMPAKTE BREITE */
+            min-width: unset; /* ❌ min-width entfernen */
+            max-width: 220px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+            z-index: 3000;
+            padding: 6px 8px;
+        }
+
+
+            .invite-dropdown.hidden {
+                display: none;
+            }
+
+
+            /* ===============================
+           Invite Search – FINAL STABLE
+           =============================== */
+
+            /* ===============================
+           FORCE Invite Search (FINAL)
+           =============================== */
+            .invite-dropdown input.invite-search {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                caret-color: #000000 !important;
+                width: 100% !important;
+                height: 16px !important;
+                min-height: 16px !important; /* ✅ KRITISCH */
+                padding: 0 5px !important;
+                font-size: 11px !important;
+                line-height: 16px !important;
+                border: 1px solid #d0d0d0 !important;
+                border-radius: 6px !important;
+                box-shadow: none !important;
+                outline: none !important;
+                transition: none !important;
+            }
+
+                .invite-dropdown input.invite-search:focus {
+                    border-color: #8c68ff !important;
+                    box-shadow: 0 0 0 1px rgba(140,104,255,0.25) !important;
+                }
+
+                .invite-dropdown input.invite-search::placeholder {
+                    color: #888 !important;
+                }
+
+
+
+
+
+
+
+        /* === USER LISTE (max 4 sichtbar) === */
+        .invite-user-list {
+            max-height: 136px; /* 4 × ~34px */
+            overflow-y: auto;
+        }
+
+        .invite-user {
+            padding: 6px 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+            .invite-user:hover {
+                background: #f4f4ff;
+            }
+
+
+            .invite-user:last-child {
+                border-bottom: none;
+            }
+
+           
+
+        .invite-user {
+            padding: 5px 6px;
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+
+
+
+        /* === SCROLLBAR (dezenter) === */
+        .invite-user-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .invite-user-list::-webkit-scrollbar-thumb {
+            background: #c7c7ff;
+            border-radius: 6px;
+        }
+
+        .invite-user-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* === ANIMATION === */
+        /* === PANEL === */
+        .invite-panel {
+            position: relative; /* ⬅️ DER ENTSCHEIDENDE FIX */
+            width: 100%;
+        }
+
+        /* === BUTTON === */
+        .invite-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        /* === DROPDOWN === */
+        .invite-panel {
+            position: relative;
+            width: 100%;
+        }
+
+        .invite-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.15);
+            z-index: 4000;
+            padding: 8px;
+        }
+
+
+            .invite-dropdown.hidden {
+                display: none;
+            }
+        /* ===============================
+           Invite Search – NO FLICKER FIX
+           =============================== */
+        .invite-dropdown {
+            contain: layout paint;
+        }
+
+        /* 🔹 Einheitliche Button-Basis */
+        .calendar-btn {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+
+        /* 🟢 Annehmen */
+        .accept-btn {
+            background-color: #7FFF7F; /* hellgrün */
+            color: black;
+        }
+
+            .accept-btn:hover {
+                background-color: #5fd35f;
+                transform: scale(1.02);
+            }
+
+        /* 🔴 Ablehnen */
+        .decline-btn {
+            background-color: #ff7f7f; /* hellrot */
+            color: black;
+        }
+
+            .decline-btn:hover {
+                background-color: #ff4c4c;
+                transform: scale(1.02);
+            }
+
+        /* === 🔧 FIX: Bootstrap überschreibt unsere Buttons === */
+        .calendar-btn,
+        .calendar-btn:active,
+        .calendar-btn:focus {
+            background-color: inherit !important;
+            color: inherit !important;
+            box-shadow: none !important;
+        }
+
+        /* 🟢 Annehmen */
+        .accept-btn {
+            background-color: #7FFF7F !important;
+            color: #000 !important;
+        }
+
+        /* 🔴 Ablehnen */
+        .decline-btn {
+            background-color: #ff7f7f !important;
+            color: #000 !important;
+        }
+
+        /* Hover-Effekt beibehalten */
+        .accept-btn:hover {
+            background-color: #5fd35f !important;
+            transform: scale(1.02);
+        }
+
+        .decline-btn:hover {
+            background-color: #ff4c4c !important;
+            transform: scale(1.02);
+        }
+        /* Überschreibe Bootstrap-Buttons im Notification-Kontext */
+        #notifList .btn-success {
+            background-color: #7FFF7F !important;
+            color: #000 !important;
+            border: none !important;
+        }
+
+            #notifList .btn-success:hover {
+                background-color: #5fd35f !important;
+            }
+
+        #notifList .btn-danger {
+            background-color: #ff7f7f !important;
+            color: #000 !important;
+            border: none !important;
+        }
+
+            #notifList .btn-danger:hover {
+                background-color: #ff4c4c !important;
+            }
+
+        /* Zusatzinfos bei Kalendereinladungen */
+        .calendar-details {
+            font-size: 0.85rem;
+            color: #222;
+            background: #f9f9f9;
+            padding: 4px 6px;
+            border-radius: 6px;
+            margin-top: 6px;
+            display: inline-block;
+        }
+
+        .calendar-btn {
+            font-size: 0.8rem;
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+        }
+
+        .accept-btn {
+            background-color: #6aff6a;
+            color: #000;
+        }
+
+            .accept-btn:hover {
+                background-color: #4ed94e;
+            }
+
+        .decline-btn {
+            background-color: #ff6969;
+            color: #000;
+        }
+
+            .decline-btn:hover {
+                background-color: #ff3f3f;
+            }
+
+        .calendar-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .accept-btn {
+            background-color: #7fff7f;
+            color: #000;
+        }
+
+        .decline-btn {
+            background-color: #ff7f7f;
+            color: #000;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .accepted {
+            background-color: #7fff7f;
+            color: #000;
+        }
+
+        .declined {
+            background-color: #ff7f7f;
+            color: #000;
+        }
+
+        .participant-chip {
+            background: #f2f2f2;
+            border-radius: 12px;
+            padding: 4px 10px;
+            margin: 2px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+
+        .participant-chip {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 4px 8px;
+            margin: 2px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+
+            .participant-chip::before {
+                content: "👤 ";
+            }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f5f5f5;
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .day-header-date {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .day-header-events {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .day-event-block {
+            border-radius: 6px;
+            color: #000;
+            font-size: 0.8rem;
+            padding: 2px 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .day-event-block {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+            /* dunklerer Rand links – wird automatisch vom Hintergrund berechnet */
+            .day-event-block::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 5px;
+                background-color: color-mix(in srgb, var(--event-color) 80%, black 20%);
+            }
+
+        .all-day-event {
+            border-radius: 6px;
+            padding: 2px 6px;
+            color: #000;
+            margin: 2px 0;
+        }
+
+        .day-event-block {
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+<body class="bg-white text-dark d-flex flex-column min-vh-100">
+
+    <!-- 🔝 HEADER -->
+
+
+    <div class="main-layout d-flex flex-grow-1" id="layout">
+        <!-- 📋 Sidebar -->
+        @if(showSidebar)
+        {
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">DMS</div>
+                <div class="sidebar-actions" style="position: relative;">
+                    <!-- Notification-Bell -->
+                        <!-- 📅 Kalender Button -->
+                        <button id="calendarBtn" class="notif-btn" title="Kalender" type="button">
+                            <i class="bi bi-calendar3"></i>
+                        </button>
+
+                        <div id="calendarDropdown" class="calendar-dropdown">
+                            <div class="calendar-inner-wrapper">
+                                <div class="calendar-left">
+                                    <div class="dropdown-header sticky-dropdown-header">
+                                        <span id="calendarHeader"></span>
+                                        <div>
+                                            <button id="prevMonthBtn" class="btn btn-link btn-sm"><i class="bi bi-chevron-left"></i></button>
+                                            <button id="nextMonthBtn" class="btn btn-link btn-sm"><i class="bi bi-chevron-right"></i></button>
+                                            
+                                        </div>
+                                    </div>
+                                    <div id="calendarGrid"></div>
+                                    <div id="selectedDateInfo" class="text-center small text-muted mt-1"></div>
+                                </div>
+
+                                <div id="dayViewPanel" class="day-view-panel">
+                                    <div id="dayHeader" class="day-header">
+                                        <div class="day-header-date"></div>
+                                        <div class="day-header-events"></div>
+                                    </div>
+                                    <div id="dayHoursList" class="day-hours-list"></div>
+                                </div>
+
+                                <!-- 📅 Termin-Erstellungsformular -->
+                                <!-- 📅 Termin-Erstellungsformular -->
+                                <div id="eventFormPanel" class="event-form-panel">
+                                    <h6>Neuen Termin erstellen</h6>
+                                    <div class="form-group">
+                                        <label for="eventTitle">Titel:</label>
+                                        <input id="eventTitle" type="text" class="form-control form-control-sm" placeholder="Titel eingeben">
+                                    </div>
+
+                                    <!-- 🕒 Ganztägig über dem Datum -->
+                                    <div class="form-group mt-2 d-flex align-items-center justify-content-between">
+                                        <label for="allDaySwitch" class="mb-0">Ganztägig</label>
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input" type="checkbox" id="allDaySwitch">
+                                        </div>
+                                    </div>
+
+                                    <!-- 📅 Start & Enddatum mit Uhrzeit -->
+                                    <div class="form-group mt-2">
+                                        <label for="eventStartDateTime">Start:</label>
+                                        <input type="datetime-local" id="eventStartDateTime" class="form-control form-control-sm">
+                                    </div>
+
+                                    <div class="form-group mt-2">
+                                        <label for="eventEndDateTime">Ende:</label>
+                                        <input type="datetime-local" id="eventEndDateTime" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="form-group mt-2">
+                                        <label>Teilnehmer</label>
+                                        <div class="invite-box invite-panel">
+                                            <div id="selectedParticipants" class="selected-participants"></div>
+
+                                            <button type="button" id="inviteBtn" class="invite-btn">
+                                                + Einladen
+                                            </button>
+
+                                            <div id="inviteDropdown" class="invite-dropdown hidden">
+                                                <input type="text" id="inviteSearch" class="invite-search" placeholder="Benutzer suchen…" />
+                                                <div id="inviteUserList" class="invite-user-list"></div>
+                                            </div>
+                                        </div>
+
+
+
+                                    </div>
+
+
+                                    <!-- 🎨 Typ -->
+                                    <div class="form-group mt-3">
+                                        <label for="eventCategory">Typ:</label>
+                                        <select id="eventCategory" class="form-select form-select-sm">
+                                            <option value="personal">Persönlich</option>
+                                            <option value="meeting">Meeting</option>
+                                            <option value="task">Aufgabe / Abgabe</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group mt-2">
+                                        <label for="eventDescription">Beschreibung:</label>
+                                        <textarea id="eventDescription" class="form-control form-control-sm" placeholder="Details zum Termin..."></textarea>
+                                    </div>
+
+                                    <button id="saveEventBtn" class="btn btn-primary btn-sm mt-3 w-100">Speichern</button>
+                                </div>
+
+                            </div>
+                        </div>
+
+
+
+
+                    <button id="notificationBtn" class="notif-btn" title="Benachrichtigungen" type="button">
+                        <i class="bi bi-bell"></i>
+                        <span id="notifBadge" class="badge bg-danger" style="display:none;">0</span>
+
+                    </button>
+                    <div id="notificationDropdown" class="notification-dropdown">
+                        <div class="dropdown-header sticky-dropdown-header d-flex justify-content-between align-items-center">
+                            <span>Benachrichtigungen</span>
+                            <div>
+                                <button id="markAllReadBtn" class="btn btn-link btn-sm" title="Alle als gelesen markieren">
+                                    <i class="bi bi-check2-all"></i>
+                                </button>
+                                <button id="notifSettings" class="btn btn-link btn-sm" title="Benachrichtigungseinstellungen">
+                                    <i class="bi bi-gear settings-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="notifList" class="notif-list">
+                            <!-- Beispiel-Content -->
+                        </div>
+                    </div>
+                    <!-- Hamburger-Toggle-Button -->
+                    <button class="sidebar-toggle-btn" id="sidebarToggle" title="Sidebar ein-/ausklappen">
+                        <span class="sidebar-hamburger">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </button>
+                </div>
+                <!-- Notification Dropdown -->
+
+            </div>
+
+            <div class="sidebar-content">
+                <div class="menu-section">
+                    <a href="/Dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                </div>
+                <div class="menu-section">
+                    <h5><i class="fas fa-star"></i> Favoriten</h5>
+                    <div id="favoriten-widgets">
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <div class="favoriten-placeholder" style="height: 38px;"></div>
+                        }
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <h5><i class="fas fa-link"></i> Zuletzt besucht</h5>
+                    <div id="recent-pages">
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <div class="favoriten-placeholder" style="height: 38px;"></div>
+                        }
+                    </div>
+                </div>
+                
+            </div>
+            <div class="sidebar-user-dropdown" id="sidebarUserDropdown">
+                        <div class="user-info" id="sidebarUserInfo">
+                            <img src="@(userProfileImageUrl ?? "/images/default-profile.png")" alt="Profilbild" class="sidebar-profile-pic" onerror="this.onerror=null; this.src='/images/default-profile.png';" />
+                            <span class="sidebar-user-name">@userFullName</span>
+                            <i class="bi bi-chevron-up dropdown-caret"></i>
+                        </div>
+                        <div class="user-dropdown-menu" id="sidebarDropdownMenu">
+                            <a href="/Einstellungen#profil"><i class="bi bi-person-circle me-2"></i> Mein Konto</a>
+                            <a href="/Einstellungen"><i class="fas fa-cog"></i> Einstellungen</a>
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <a href="/Identity/Account/Login"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+                            }
+                            else
+                            {
+                                <a href="/Identity/Account/Login"><i class="bi bi-box-arrow-in-right me-2"></i> Login</a>
+                            }
+                        </div>
+                    </div>
+                    
+        </div>
+        }
+        <!-- Contenu principal -->
+        <div class="content-area flex-grow-1 px-4 py-3 @(showSidebar ? "" : "no-sidebar")">
+            @RenderBody()
+        </div>
+
+    </div>
+
+
+
+    <!-- 🔄 CONTENU PRINCIPAL -->
+    
+
+    <!-- 🔚 FOOTER COLLÉ EN BAS -->
+    <!-- 📦 JS -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+
+
+<script>
+        let selectedCalendarDate = null;
+                let lastStartTime = "08:00";
+        let lastEndTime = "09:00";
+                let allUsers = [];
+        let invitedUsers = []; // { id, fullName }
+
+       try {
+      if (localStorage.getItem("sidebarCollapsed") === "true") {
+        document.documentElement.setAttribute("data-sidebar", "collapsed");
+      }
+    } catch (e) {}
+
+          document.addEventListener("DOMContentLoaded", function () {
+    // ========================
+    // 🔔 Benachrichtigungen
+    // ========================
+    // 🔹 Make these global so calendar code can access them
+    window.notifBtn = document.getElementById("notificationBtn");
+    window.notifDropdown = document.getElementById("notificationDropdown");
+    const notifBadge = document.getElementById("notifBadge");
+    const notifList = document.getElementById("notifList");
+    const markAllReadBtn = document.getElementById("markAllReadBtn");
+    const notifSettingsBtn = document.getElementById("notifSettings");
+
+    if (window.notifBtn && window.notifDropdown && notifList) {
+        window.notifBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            window.notifDropdown.classList.toggle("open");
+            if (window.notifDropdown.classList.contains("open")) loadNotifications();
+        });
+
+        if (notifSettingsBtn) {
+            notifSettingsBtn.addEventListener("click", () => {
+                window.location.href = "/Einstellungen#benachrichtigung";
+            });
+        }
+
+        document.addEventListener("click", () => window.notifDropdown.classList.remove("open"));
+        window.notifDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+                  window.loadNotifications =    async function loadNotifications() {
+          const notifList = document.getElementById("notifList");
+          const notifBadge = document.getElementById("notifBadge");
+
+          notifList.innerHTML = '<div class="text-center p-2">Lade Benachrichtigungen...</div>';
+
+          try {
+            const res = await fetch("/Notifications/GetUserNotifications");
+            if (!res.ok) throw new Error("Serverfehler: " + res.status);
+
+            const notifs = await res.json();
+            notifList.innerHTML = "";
+
+            if (!notifs || notifs.length === 0) {
+              notifList.innerHTML = '<div class="text-center text-muted p-2">Keine Benachrichtigungen</div>';
+              if (notifBadge) notifBadge.style.display = "none";
+              return;
+            }
+
+            let unreadCount = 0;
+
+            notifs.forEach(n => {
+              if (!n.isRead) unreadCount++;
+
+              const isCalendarInvite = n.type === "CalendarInv";
+              const url = n.actionLink || "#";
+
+              console.log("🔔 Notification:", n);
+
+              notifList.innerHTML += `
+                <div class="dropdown-item${n.isRead ? "" : " fw-bold"}"
+                     style="border-bottom:1px solid #eee; padding:8px; background:#fff; border-radius:10px; margin-bottom:6px;">
+
+                  <div><strong>${n.title}</strong></div>
+                  <div style="font-size:small;">${n.content}</div>
+
+                  ${isCalendarInvite ? `
+                    <div class="calendar-details" style="font-size:0.85rem; color:#444; margin-top:6px; background:#f7f7f7; padding:6px; border-radius:8px;">
+                      🕒 ${n.eventStart ? `<b>${n.eventStart}</b>` : "<i>Keine Startzeit</i>"}
+                      ${n.eventEnd ? ` – <b>${n.eventEnd}</b>` : ""}
+                      ${n.organizerName ? `<br>👤 <b>${n.organizerName}</b>` : ""}
+                    </div>
+
+                    <div class="mt-2">
+                      ${n.status === 1
+                        ? `<div class="status-badge accepted">Angenommen</div>`
+                        : n.status === 2
+                          ? `<div class="status-badge declined">Abgelehnt</div>`
+                          : `
+                            <button onclick="respondInvitation(${n.relatedEntityId}, true)"
+                                    class="calendar-btn accept-btn me-1">Annehmen</button>
+                            <button onclick="respondInvitation(${n.relatedEntityId}, false)"
+                                    class="calendar-btn decline-btn">Ablehnen</button>
+                          `}
+                    </div>
+                  ` : ""}
+
+                  <div style="font-size:x-small;color:gray;margin-top:4px;">${n.receivedAt}</div>
+                </div>`;
+            });
+
+            // 🟣 Zeige Badge mit Anzahl ungelesener Benachrichtigungen
+            if (notifBadge) {
+              notifBadge.style.display = unreadCount > 0 ? "inline-block" : "none";
+              notifBadge.innerText = unreadCount;
+            }
+
+          } catch (err) {
+            console.error("❌ Fehler beim Laden der Benachrichtigungen:", err);
+            notifList.innerHTML = '<div class="text-danger text-center p-2">Fehler beim Laden.</div>';
+          }
+        }
+
+
+        
+
+        window.markAsRead = async (id) => {
+            await fetch(`/Notifications/MarkAsRead/${id}`, { method: "POST" });
+            loadNotifications();
+        };
+
+        window.handleNotifClick = (id, url) => {
+            fetch(`/Notifications/MarkAsRead/${id}`, { method: "POST" })
+                .finally(() => (window.location.href = url));
+        };
+
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                fetch("/Notifications/MarkAllAsRead", { method: "POST" }).then(loadNotifications);
+            });
+        }
+
+        loadNotifications();
+    }
+
+
+    function mapNotifToUrl(n) {
+        if(n.actionLink) return n.actionLink;
+        console.log("actionlink", n.actionLink);
+        
+    }
+    
+    }); // End of first DOMContentLoaded (Notifications)
+    
+            // 1. Favoriten laden (wie oben)
+       document.addEventListener('DOMContentLoaded', function () {
+
+        // ------------------------------
+        // 1. Favoriten laden
+        // ------------------------------
+        fetch('/Dashboard/GetFavoriten')
+    .then(res => res.json())
+    .then(favs => {
+        const container = document.getElementById('favoriten-widgets');
+        if (!container) return;
+
+        const maxFavoriten = 5;
+        container.innerHTML = ""; // alte Platzhalter entfernen
+
+        favs.slice(0, maxFavoriten).forEach(fav => {
+            const link = document.createElement('a');
+            link.href = fav.actionLink || `/Widget/${fav.id}`;
+            link.className = "favoriten-link";
+            link.innerHTML = `<span class="sidebar-icon" style="font-size: 1.2em;">${fav.icon}</span>
+                              <span>${fav.title}</span>`;
+            container.appendChild(link);
+        });
+
+        // Auffüllen mit Platzhaltern
+        for (let i = favs.length; i < maxFavoriten; i++) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'favoriten-placeholder';
+            placeholder.style.height = '38px';
+            container.appendChild(placeholder);
+        }
+    })
+    .catch(err => {
+        console.error("Fehler beim Laden der Favoriten:", err);
+    });
+
+
+
+        // ------------------------------
+        // 2. Letzte Seiten merken
+        // ------------------------------
+        const current = window.location.pathname + window.location.search;
+
+        function normalizePage(path) {
+            if (path.startsWith("/Workflows")) return "/Workflows/Index";
+            if (path.startsWith("/Notiz")) return "/Notiz";
+            if (path.startsWith("/Tests/UploadMulti")) return "/Tests/UploadMulti";
+            if (path.startsWith("/Pdf/EditOne")) return "/Pdf/EditOne";
+            if(path.startsWith("/Dokument?SelectedFolder")) return "/Dokument/Index";
+            if(path.startsWith("/Dokument/Index?typ")) return "/Dokument/Index";
+            if(path.startsWith("/Dokument?pageNumber")) return "/Dokument/Index";
+            return path;
+        }
+
+        const normalized = normalizePage(current);
+
+        if (normalized !== '/Dashboard'
+            && normalized !== '/Identity/Account/AccessDenied'
+            && !normalized.startsWith('/Identity')
+            && !normalized.startsWith('/Dokument/Bearbeiten')
+            && !normalized.startsWith('/Dokument/MetadatenBearbeiten')
+            && !normalized.startsWith('/Dokument/Versionen')
+            && !normalized.startsWith('/Willkommen')) {
+
+            let history = JSON.parse(localStorage.getItem('recentPages') || '[]');
+
+            // Seite am Anfang einfügen, Duplikate entfernen
+            history = history.filter(p => p !== normalized);
+            history.unshift(normalized);
+
+            // Maximal 10 merken
+            history = history.slice(0, 10);
+
+            localStorage.setItem('recentPages', JSON.stringify(history));
+        }
+
+
+        // ------------------------------
+        // 3. Schnellzugriff (Zuletzt besucht)
+        // ------------------------------
+        const maxRecent = 5;
+        const recent = JSON.parse(localStorage.getItem('recentPages') || '[]');
+        const recentContainer = document.getElementById('recent-pages');
+
+        if (recentContainer) {
+            recent.slice(0, maxRecent).forEach((page, idx) => {
+                let title = page;
+                if (page.startsWith('/Dokument/Index')) title = "Dokumentenverwaltung";
+                else if (page.startsWith('/Tests/UploadMulti')) title = "Upload";
+                else if (page.startsWith('/Pdf/Edit')) title = "PDF signieren";
+                else if (page.includes('/Logs/Audit')) title = "Audit-Protokolle";
+                else if (page.includes('/Dokument/DashboardAdmin')) title = "Admindashboard";
+                else if (page.includes('/Dokument/Suchen')) title = "Suchen";
+                else if (page.includes('/Chat/Chat')) title = "Chat";
+                else if (page.includes('/Einstellungen')) title = "Einstellungen";
+                else if (page.includes('/Dokument/Version')) title = "Versionen";
+                else if (page.includes('/Dokument/Index?typ=archiviert')) title = "Archiv";
+                else if (page.includes('/Tests/Aufgaben')) title = "Aufgaben";
+                else if (page.startsWith('/Notiz')) title = "Notizen";
+                else if (page.includes('/Admin/CreateUser')) title = "Benutzer erstellen";
+                else if (page.includes('/Admin/MeinBenutzer')) title = "Benutzer verwalten";
+                else if (page.includes('/Favoriten')) title = "Favoriten";
+                else if (page.includes('/Dokument/AlleVersionen')) title = "Versionen";
+                else if (page.includes('/GeteilteDokumente')) title = "Geteilte Inhalte";
+                else if (page.includes('/AuditLog')) title = "Zuletzt bearbeitet";
+                else if (page.startsWith('/Workflows')) title = "Workflows";
+                else if (page.includes('/Signieren')) title = "Signieren";
+                else if (page.includes('/Dokument/ScanDokument')) title = "Scannen";
+
+                const link = document.createElement('a');
+                link.href = page;
+                link.style.display = 'flex';
+                link.style.alignItems = 'center';
+                link.style.gap = '8px';
+                link.style.textDecoration = 'none';
+                link.style.color = 'inherit';
+                link.innerHTML = `<span>${title}</span>`;
+
+                if (recentContainer.children[idx]) {
+                    recentContainer.replaceChild(link, recentContainer.children[idx]);
+                } else {
+                    recentContainer.appendChild(link);
+                }
+            });
+
+            // Platzhalter für leere Slots
+            const displayed = recent.slice(0, maxRecent).length;
+            for (let i = displayed; i < maxRecent; i++) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'favoriten-placeholder';
+                placeholder.style.height = '38px';
+                recentContainer.appendChild(placeholder);
+            }
+        }
+    });
+
+
+
+
+    const widgetActionMap = {
+        workflow:      { type: "redirect", url: "/Workflows/Index" },
+    versionen:     { type: "redirect", url: "/Tests/Versionierung" },
+    archiv:        { type: "redirect", url: "/Tests/Archiv" },
+    aufgaben:      { type: "redirect", url: "/Tests/Aufgaben" },
+    ablage:        { type: "redirect", url: "/Tests/Verwalten" },
+    import:        { type: "redirect", url: "/Tests/UploadTest" },
+    zuletzt:       { type: "redirect", url: "/AuditLog" },
+    notizen:       { type: "redirect",   url: "/Notiz" }
+    };
+
+            // <--- DIESE KLAMMERN SIND WICHTIG
+
+    // 🚀 Sofort beim Laden ausführen - KEIN Warten auf DOMContentLoaded!
+    
+
+    // Toggle-Button Event Listener (wartet auf DOMContentLoaded)
+    
+
+
+
+
+        function handleWidgetActionById(widgetId) {
+        const action = widgetActionMap[widgetId];
+        if (!action) {
+            // Fallback: Gehe zum Dashboard-Widget
+            window.location.href = `/Dashboard#${widgetId}`;
+            return;
+        }
+        if (action.type === "redirect" && action.url) {
+            window.location.href = action.url;
+        } else if (action.type === "custom" && action.func && typeof window[action.func] === "function") {
+            window[action.func]();
+        }
+    }
+    
+
+       
+
+
+
+        
+
+        function toggleSidebar() {
+            document.getElementById("layout").classList.toggle("sidebar-collapsed");
+        }
+              
+        const userDropdown = document.getElementById('sidebarUserDropdown');
+        const userInfo = document.getElementById('sidebarUserInfo');
+        let dropdownTimeout = null;
+
+        // Nur ausführen, wenn Sidebar-Elemente existieren
+        if (userDropdown && userInfo) {
+
+            // Öffnen bei Mouseenter (auf User Info)
+            userInfo.addEventListener('mouseenter', function () {
+                clearTimeout(dropdownTimeout);
+                userDropdown.classList.add('open');
+            });
+
+            // Wenn man das gesamte Widget verlässt, langsam schließen
+            userDropdown.addEventListener('mouseleave', function () {
+                dropdownTimeout = setTimeout(() => {
+                    userDropdown.classList.remove('open');
+                }, 180); // 180ms Verzögerung – genug Zeit für Nutzer, um ins Menü zu gehen
+            });
+
+            // Wenn man ins Dropdown-Menü zurückgeht, offen lassen
+            userDropdown.addEventListener('mouseenter', function () {
+                clearTimeout(dropdownTimeout);
+                userDropdown.classList.add('open');
+            });
+
+            // Optional: Klick außerhalb schließt
+            document.addEventListener('click', function (e) {
+                if (!userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('open');
+                }
+            });
+        }
+    
+
+    // 🚀 1. Noch vor dem Rendern prüfen, ob Sidebar collapsed ist
+        // 🚀 1. Noch vor dem Rendern prüfen, ob Sidebar collapsed ist
+      window.addEventListener("DOMContentLoaded", function () {
+
+            
+      // Sichtbar machen, sobald der Zustand korrekt gesetzt ist
+      document.documentElement.style.visibility = "visible";
+      document.documentElement.classList.remove("sidebar-collapsed-initial");
+
+      const layout = document.getElementById("layout");
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      if (layout && sidebarToggle) {
+         const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
+        document.documentElement.setAttribute("data-sidebar", collapsed ? "collapsed" : "");
+
+        // Klick-Handler
+        sidebarToggle.addEventListener("click", function () {
+          const isCollapsed = document.documentElement.getAttribute("data-sidebar") === "collapsed";
+          const newState = !isCollapsed;
+          document.documentElement.setAttribute("data-sidebar", newState ? "collapsed" : "");
+          localStorage.setItem("sidebarCollapsed", newState);
+          document.cookie = "sidebarCollapsed=" + newState + "; path=/;";
+        });
+      }
+
+      // === Calendar initialization ===
+
+
+        
+      const calendarBtn = document.getElementById("calendarBtn");
+      const calendarDropdown = document.getElementById("calendarDropdown");
+      const calendarGrid = document.getElementById("calendarGrid");
+      const calendarHeader = document.getElementById("calendarHeader");
+      const prevMonthBtn = document.getElementById("prevMonthBtn");
+      const nextMonthBtn = document.getElementById("nextMonthBtn");
+      const addEventBtn = document.getElementById("addEventBtn");
+        
+      const eventFormPanel = document.getElementById("eventFormPanel");
+      const eventAllDay = document.getElementById("eventAllDay");
+      const eventWithTime = document.getElementById("eventWithTime");
+      const eventTimeGroup = document.getElementById("eventTimeGroup");
+      const eventTime = document.getElementById("eventTime");
+      const saveEventBtn = document.getElementById("saveEventBtn");
+      const eventTitleInput = document.getElementById("eventTitle");
+      const eventDateInput = document.getElementById("eventDateInput");
+      const eventDescription = document.getElementById("eventDescription");
+              // === 🔧 Zeitlogik: Start-Ende dynamisch koppeln ===
+        const eventStartTime = document.getElementById("eventStartTime");
+        const eventEndTime = document.getElementById("eventEndTime");
+              const allDaySwitch = document.getElementById("allDaySwitch");
+
+
+                 
+        const startDateTime = document.getElementById("eventStartDateTime");
+        const endDateTime = document.getElementById("eventEndDateTime");
+
+                if (allDaySwitch && startDateTime && endDateTime) {
+                  allDaySwitch.addEventListener("change", () => {
+                  if (allDaySwitch.checked) {
+
+          // ⏰ Uhrzeiten merken, BEVOR sie verloren gehen
+          if (startDateTime.value.includes("T")) {
+            lastStartTime = startDateTime.value.split("T")[1].substring(0, 5);
+          }
+          if (endDateTime.value.includes("T")) {
+            lastEndTime = endDateTime.value.split("T")[1].substring(0, 5);
+          }
+
+          startDateTime.type = "date";
+          endDateTime.type = "date";
+
+          const baseDate =
+            startDateTime.value?.split("T")[0] ||
+            selectedCalendarDate ||
+            new Date().toISOString().split("T")[0];
+
+          startDateTime.value = baseDate;
+          endDateTime.value = baseDate;
+        }
+                else {
+          startDateTime.type = "datetime-local";
+          endDateTime.type = "datetime-local";
+
+          const baseDate =
+            startDateTime.value?.split("T")[0] ||
+            selectedCalendarDate ||
+            new Date().toISOString().split("T")[0];
+
+          startDateTime.value = `${baseDate}T${lastStartTime}`;
+          endDateTime.value = `${baseDate}T${lastEndTime}`;
+        }
+
+        });
+
+        }
+
+
+
+
+        if (eventStartTime && eventEndTime) {
+          eventStartTime.addEventListener("change", () => {
+            if (!eventStartTime.value) return;
+            const [h, m] = eventStartTime.value.split(":").map(Number);
+            const newEnd = new Date();
+            newEnd.setHours(h + 1, m);
+            const hh = String(newEnd.getHours()).padStart(2, "0");
+            const mm = String(newEnd.getMinutes()).padStart(2, "0");
+            eventEndTime.value = `${hh}:${mm}`;
+          });
+
+          // Wenn der Benutzer die Endzeit manuell ändert, speichern wir das so
+          eventEndTime.addEventListener("change", () => {
+            localStorage.setItem("customEndTime", eventEndTime.value);
+          });
+        }
+
+      // 🔹 Nur Kalender initialisieren, wenn alle erforderlichen Elemente vorhanden sind
+      if (calendarBtn && calendarDropdown) {
+        console.log("Initializing calendar...");
+
+        // Uhrzeiten erzeugen (00:00–23:00)
+        
+        
+
+        let events = [];
+        let currentDate = new Date();
+        let activeDay = null;
+
+                calendarBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+
+          // Schließt Benachrichtigungen
+          if (window.notifDropdown && window.notifDropdown.classList.contains("open")) {
+            window.notifDropdown.classList.remove("open");
+          }
+
+          const isNowOpen = !calendarDropdown.classList.contains("open");
+          calendarDropdown.classList.toggle("open");
+
+          if (isNowOpen) {
+            renderCalendar();
+          } else {
+            // 🧩 NEU: Stundenpanel & Formular schließen, wenn Kalender geschlossen wird
+            const dayViewPanel = document.getElementById("dayViewPanel");
+            const eventFormPanel = document.getElementById("eventFormPanel");
+            if (dayViewPanel) dayViewPanel.style.display = "none";
+            if (eventFormPanel) eventFormPanel.style.display = "none";
+            lastOpenedDay = null;
+          }
+        });
+
+
+        // Close calendar when notification button is clicked
+        if (window.notifBtn) {
+          window.notifBtn.addEventListener("click", () => {
+            if (calendarDropdown.classList.contains("open")) {
+              calendarDropdown.classList.remove("open");
+            }
+          });
+        }
+
+        document.addEventListener("click", () => calendarDropdown.classList.remove("open"));
+        calendarDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+        // === Monatsnavigation ===
+        prevMonthBtn.addEventListener("click", () => {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+          renderCalendar();
+        });
+        nextMonthBtn.addEventListener("click", () => {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          renderCalendar();
+        });
+
+                function renderEvent(ev) {
+          const startHour = ev.startTime ? parseInt(ev.startTime.split(":")[0]) : 0;
+          const endHour = ev.endTime ? parseInt(ev.endTime.split(":")[0]) : startHour + 1;
+
+          // Hol die passenden Stunden-Elemente
+          const startSlot = hoursList.querySelector(`.day-hour[data-hour='${startHour}']`);
+          const endSlot = hoursList.querySelector(`.day-hour[data-hour='${endHour}']`);
+
+          if (!startSlot || !endSlot) return;
+
+          const block = document.createElement("div");
+          block.className = "day-event-block";
+          block.textContent = ev.title || "(Ohne Titel)";
+          block.style.background = ev.color || "#ffb74d";
+
+          // 🎯 Füge den Block RELATIV im Stundencontainer ein
+          // Der Block deckt den gesamten StartSlot bis zum EndSlot ab
+          startSlot.appendChild(block);
+          block.style.position = "absolute";
+          block.style.top = "0";
+          block.style.left = "58px";
+          block.style.right = "8px";
+
+          // Höhe anhand der Differenz der Slots
+          const startIndex = parseInt(startSlot.dataset.index);
+          const endIndex = parseInt(endSlot.dataset.index);
+          const hourHeight = startSlot.offsetHeight;
+
+          block.style.height = `${(endIndex - startIndex) * hourHeight}px`;
+        }
+
+
+        // === Kalender zeichnen ===
+        function renderCalendar() {
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth();
+          const today = new Date();
+
+                  const dayViewPanel = document.getElementById("dayViewPanel");
+        const eventFormPanel = document.getElementById("eventFormPanel");
+        if (dayViewPanel) dayViewPanel.style.display = "none";
+        if (eventFormPanel) eventFormPanel.style.display = "none";
+        lastOpenedDay = null;
+
+          calendarHeader.textContent = currentDate.toLocaleString("de-DE", {
+            month: "long",
+            year: "numeric"
+          });
+
+          calendarGrid.innerHTML = "";
+
+          const existingHeader = document.querySelector(".calendar-weekdays");
+          if (existingHeader) existingHeader.remove();
+
+          const weekdayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+          const weekdayRow = document.createElement("div");
+          weekdayRow.className = "calendar-weekdays";
+          weekdayRow.innerHTML = weekdayNames.map(d => `<div>${d}</div>`).join("");
+          calendarGrid.parentNode.insertBefore(weekdayRow, calendarGrid);
+
+          const firstDay = new Date(year, month, 1);
+          const lastDay = new Date(year, month + 1, 0);
+          const firstWeekday = (firstDay.getDay() + 6) % 7;
+          const lastWeekday = (lastDay.getDay() + 6) % 7;
+          const startDate = new Date(year, month, 1 - firstWeekday);
+          const endDate = new Date(year, month + 1, 6 - lastWeekday);
+
+          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const realDate = new Date(d);
+            const dateStr = realDate.toLocaleDateString("sv-SE");
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "calendar-day";
+            dayDiv.dataset.date = dateStr;
+            dayDiv.textContent = realDate.getDate();
+
+            const dayOfWeek = (realDate.getDay() + 6) % 7;
+            if (dayOfWeek >= 5) dayDiv.classList.add("weekend");
+            if (realDate.getMonth() !== month) dayDiv.classList.add("other-month");
+            if (
+              realDate.getDate() === today.getDate() &&
+              realDate.getMonth() === today.getMonth() &&
+              realDate.getFullYear() === today.getFullYear()
+            ) dayDiv.classList.add("today");
+
+                         if (events.some(ev => {
+          const start = new Date(ev.startDate);
+          const end = new Date(ev.endDate);
+          const current = new Date(dateStr);
+          return current >= start && current <= end;
+        })) {
+          const ev = events.find(e => {
+            const start = new Date(e.startDate);
+            const end = new Date(e.endDate);
+            const current = new Date(dateStr);
+            return current >= start && current <= end;
+          });
+
+          const dot = document.createElement("div");
+          dot.className = "calendar-event-dot";
+          dot.style.background = ev.color || "#0d6efd";
+          dayDiv.appendChild(dot);
+        }
+
+
+            dayDiv.addEventListener("click", () => showEventsForDate(dateStr));
+            calendarGrid.appendChild(dayDiv);
+          }
+        }
+
+        const dayViewPanel = document.getElementById("dayViewPanel");
+        const hoursList = document.getElementById("dayHoursList");
+
+        // === Stundenansicht ===
+                      let lastOpenedDay = null; // ⬅️ Globale Variable merken, welcher Tag zuletzt geöffnet war
+                          function darkenColor(hex, amount = 0.2) {
+              if (!hex) return "#000";
+              let c = hex.startsWith("#") ? hex.substring(1) : hex;
+              if (c.length === 3) c = c.split("").map(x => x + x).join("");
+              const num = parseInt(c, 16);
+              const r = Math.max(0, (num >> 16) - 255 * amount);
+              const g = Math.max(0, ((num >> 8) & 0xff) - 255 * amount);
+              const b = Math.max(0, (num & 0xff) - 255 * amount);
+              return `rgb(${r}, ${g}, ${b})`;
+            }
+                    // ✅ Stundenindex-basiertes Rendering – keine Pixelberechnung mehr
+                     function showEventsForDate(dateStr) {
+          const dayViewPanel = document.getElementById("dayViewPanel");
+          const eventFormPanel = document.getElementById("eventFormPanel");
+          const hoursList = document.getElementById("dayHoursList");
+          selectedCalendarDate = dateStr;
+
+          // 🗓 Datumskopf aktualisieren
+          const headerDate = document.querySelector(".day-header-date");
+          const headerEvents = document.querySelector(".day-header-events");
+          if (headerDate) {
+            const date = new Date(dateStr);
+            headerDate.textContent = date.toLocaleDateString("de-DE", {
+              weekday: "long",
+              day: "2-digit",
+              month: "long",
+              year: "numeric"
+            });
+          }
+          if (headerEvents) headerEvents.innerHTML = ""; // alte Einträge löschen
+
+          resetEventForm(false);
+
+          // Toggle schließen
+          if (lastOpenedDay === dateStr && dayViewPanel.style.display === "flex") {
+            dayViewPanel.style.display = "none";
+            eventFormPanel.style.display = "none";
+            lastOpenedDay = null;
+            document.querySelectorAll(".calendar-day.selected")
+              .forEach(el => el.classList.remove("selected"));
+            return;
+          }
+
+          lastOpenedDay = dateStr;
+          eventFormPanel.style.display = "none";
+          hoursList.innerHTML = "";
+          dayViewPanel.style.display = "flex";
+
+          document.querySelectorAll(".calendar-day.selected")
+            .forEach(el => el.classList.remove("selected"));
+          document.querySelector(`.calendar-day[data-date='${dateStr}']`)
+            ?.classList.add("selected");
+
+          // 🧱 Stundenraster (00:00–23:00)
+          const hourIndexMap = {};
+          for (let h = 0; h < 24; h++) {
+            const hourDiv = document.createElement("div");
+            hourDiv.className = "day-hour";
+            hourDiv.dataset.hour = h;
+            hourDiv.innerHTML = `
+              <span class="hour-label">${String(h).padStart(2, "0")}:00</span>
+              <div class="hour-action-area">
+                <button class="add-btn"><i class="bi bi-plus"></i></button>
+              </div>
+            `;
+            hourDiv.addEventListener("click", e => {
+              e.stopPropagation();
+              openEventForm(dateStr, h);
+            });
+            hoursList.appendChild(hourDiv);
+            hourIndexMap[h] = hourDiv;
+          }
+
+          // 📅 Events des ausgewählten Tages
+          const dayEvents = events.filter(ev => {
+            const start = new Date(ev.startDate);
+            const end = new Date(ev.endDate);
+            const cur = new Date(dateStr);
+            return start <= cur && end >= cur;
+          });
+
+          // 🔹 1. Ganztägige Events in den Header
+          const allDayEvents = dayEvents.filter(e => e.allDay || !e.startTime);
+          if (headerEvents && allDayEvents.length > 0) {
+            allDayEvents.forEach(e => {
+                      const badge = document.createElement("div");
+        badge.className = "all-day-event";
+
+        // Hauptfarbe + dunkler Rand
+        const baseColor = e.color || "#90caf9";
+        const darker = darkenColor(baseColor, 0.25);
+
+        badge.style.background = baseColor;
+        badge.style.borderLeft = `5px solid ${darker}`; // 🔹 identisch mit Stunden-Events
+        badge.style.color = "black"; // optional
+        badge.innerHTML = `<span>${e.title}</span>`;
+        badge.addEventListener("click", () => openEventEditor(e.id));
+        headerEvents.appendChild(badge);
+            });
+          }
+
+          // 🔹 2. Zeitbasierte Events vorbereiten
+          const timed = dayEvents
+            .filter(e => !e.allDay && e.startTime && e.endTime)
+            .map(e => ({
+              ev: e,
+              start: combineDateAndTime(e.startDate, e.startTime),
+              end: combineDateAndTime(e.endDate, e.endTime),
+            }))
+            .sort((a, b) => a.start - b.start);
+
+          // 🧩 Overlap-Gruppen (gleichzeitige Termine)
+          const groups = [];
+          timed.forEach(item => {
+            let placed = false;
+            for (const g of groups) {
+              if (g.some(e => overlaps(e, item))) {
+                g.push(item);
+                placed = true;
+                break;
+              }
+            }
+            if (!placed) groups.push([item]);
+          });
+
+          // 🎨 Rendern
+          const leftOffset = 58;
+          const gap = 4;
+          const containerWidth = 200;
+          const rightPadding = 20;
+          const usableWidth = containerWidth - leftOffset - rightPadding;
+
+          groups.forEach(group => {
+            const cols = group.length;
+            const colWidth = (usableWidth - gap * (cols - 1)) / cols;
+
+            group.forEach((item, idx) => {
+              const startH = item.start.getHours();
+              const startM = item.start.getMinutes();
+              const endH = item.end.getHours();
+              const endM = item.end.getMinutes();
+
+              const startSlot = hourIndexMap[startH];
+              const endSlot = hourIndexMap[endH >= 23 ? 23 : endH];
+              if (!startSlot || !endSlot) return;
+
+              const hourHeight = startSlot.offsetHeight;
+
+              // 🔹 Minuten-genaue Berechnung
+              const startOffset = (startM / 60) * hourHeight;
+              const endOffset = (endM / 60) * hourHeight;
+              const top = startSlot.offsetTop + startOffset;
+              const height = (endSlot.offsetTop + endOffset) - top;
+
+              const durationMinutes = (item.end - item.start) / 60000;
+              const minuteHeight = hourHeight / 60;
+              const exactHeight = durationMinutes * minuteHeight;
+
+                      // 🧩 Hilfsfunktion zum Abdunkeln einer Farbe (z. B. 20 % dunkler)
+        
+
+        // 🧱 Block-Element erzeugen
+        const block = document.createElement("div");
+        block.className = "day-event-block";
+        block.innerHTML = `<span class="event-title">${item.ev.title}</span>`;
+
+        // Hauptfarbe aus Event
+        const baseColor = item.ev.color || "#90caf9"; // Fallback: hellblau
+        const darker = darkenColor(baseColor, 0.25);  // 25 % dunkler für Rand
+
+        block.style.background = baseColor;
+        block.style.borderLeft = `5px solid ${darker}`; // <— dunkler Rand
+        block.style.position = "absolute";
+        block.style.borderRadius = "6px";
+        block.style.top = `${top}px`;
+        block.style.left = `${leftOffset + idx * (colWidth + gap)}px`;
+        block.style.width = `${colWidth}px`;
+        block.style.height = `${Math.max(exactHeight, 8)}px`;
+        block.style.zIndex = 10 + idx;
+
+        // Klick-Event beibehalten
+        block.addEventListener("click", e => {
+          e.stopPropagation();
+          openEventEditor(item.ev.id);
+        });
+
+        hoursList.appendChild(block);
+
+              block.style.position = "absolute";
+              block.style.top = `${top}px`;
+              block.style.left = `${leftOffset + idx * (colWidth + gap)}px`;
+              block.style.width = `${colWidth}px`;
+              block.style.height = `${Math.max(exactHeight, 8)}px`;
+              block.style.zIndex = 10 + idx;
+              block.style.borderRadius = "6px";
+
+              block.addEventListener("click", e => {
+                e.stopPropagation();
+                openEventEditor(item.ev.id);
+              });
+
+              hoursList.appendChild(block);
+            });
+          });
+        }
+
+
+
+
+
+
+                const startInput = document.getElementById("eventStartDateTime");
+        const endInput = document.getElementById("eventEndDateTime");
+
+        [startInput, endInput].forEach(input => {
+            if (input) {
+                input.addEventListener("change", () => {
+                    resetEventForm(false);
+                });
+            }
+        });
+
+
+
+
+        // === Formular öffnen ===
+                    function openEventForm(dateStr = null, hour = null) {
+                            resetEventForm(false);
+
+          eventFormPanel.style.display = "flex";
+          const startInput = document.getElementById("eventStartDateTime");
+          const endInput = document.getElementById("eventEndDateTime");
+          const allDaySwitch = document.getElementById("allDaySwitch");
+
+          // 🗓 Wenn das Datum bekannt ist (vom angeklickten Tag), nutzen wir das
+          const baseDate = dateStr || new Date().toISOString().split("T")[0];
+
+          loadUsers();
+
+          if (hour != null) {
+            // Zeitbasierter Termin
+            allDaySwitch.checked = false;
+            startInput.type = "datetime-local";
+            endInput.type = "datetime-local";
+
+            const hh = String(hour).padStart(2, "0");
+            startInput.value = `${baseDate}T${hh}:00`;
+
+            const nextHour = String((hour + 1) % 24).padStart(2, "0");
+            endInput.value = `${baseDate}T${nextHour}:00`;
+          } else {
+            // Ganztagstermin
+            allDaySwitch.checked = true;
+            startInput.type = "date";
+            endInput.type = "date";
+
+            // ⬇️ hier der wichtige Fix
+            startInput.value = baseDate;
+            endInput.value = baseDate;
+          }
+
+          eventTitleInput.value = "";
+          eventDescription.value = "";
+        }
+
+                async function loadCalendarInvitations() {
+          const res = await fetch("/Calendar/GetInvitations");
+          if (!res.ok) return;
+
+          const invites = await res.json();
+          if (!invites.length) return;
+
+          const notifList = document.getElementById("notifList");
+
+          invites.forEach(i => {
+            const div = document.createElement("div");
+            div.className = "notif-item unread";
+            div.innerHTML = `
+              <b>📅 Einladung</b><br/>
+              ${i.title}<br/>
+              <small>${i.startDate} ${i.startTime ?? ""}</small>
+              <div class="mt-1">
+                <button onclick="respondInvitation(${i.participantId}, true)">✅ Annehmen</button>
+                <button onclick="respondInvitation(${i.participantId}, false)">❌ Ablehnen</button>
+              </div>
+            `;
+            notifList.prepend(div);
+          });
+        }
+
+                window.respondInvitation = async function respondInvitation(participantId, accept) {
+          try {
+            const res = await fetch(`/Calendar/RespondInvitation?participantId=${participantId}&accept=${accept}`, {
+              method: 'POST',
+              credentials: 'include'
+            });
+
+            if (!res.ok) throw new Error("Antwort fehlgeschlagen: " + res.status);
+            const text = await res.text();
+            console.log("✅ Antwort erfolgreich:", text);
+
+            // 🔄 Aktualisiere Benachrichtigungen
+            if (window.loadNotifications) await loadNotifications();
+
+            // 🔄 Aktualisiere Kalender
+            if (typeof loadEventsFromDb === "function") await loadEventsFromDb();
+
+          } catch (err) {
+            console.error("❌ Fehler in respondInvitation:", err);
+            alert("Fehler bei der Antwort: " + err.message);
+          }
+        };
+
+
+
+
+
+
+
+
+                    function toDateTime(date, time) {
+          if (!time) return null;
+          const local = new Date(`${date}T${time}:00`);
+          return local.toISOString().replace("Z", ""); // <--- Entfernt das "Z"
+        }
+
+                // 🕒 Hilfsfunktion: Datum in lokales ISO-Format ohne Zeitzonen-Verschiebung
+        function toLocalISOString(date) {
+          if (!date) return null;
+          const tzOffset = date.getTimezoneOffset() * 60000; // Offset in Millisekunden
+          const localISOTime = new Date(date - tzOffset).toISOString().slice(0, 19);
+          return localISOTime;
+        }
+
+        // === Speichern in DB ===
+                     // === 🧭 TERMIN SPEICHERN / AKTUALISIEREN ===
+        // === 🧭 TERMIN SPEICHERN / AKTUALISIEREN ===
+        saveEventBtn.addEventListener("click", async () => {
+          const title = eventTitleInput.value.trim();
+          const startInput = document.getElementById("eventStartDateTime");
+          const endInput = document.getElementById("eventEndDateTime");
+          const desc = eventDescription.value.trim();
+          const allDay = allDaySwitch.checked;
+
+          if (!title || !startInput.value) {
+            alert("Bitte Titel und Startdatum eingeben");
+            return;
+          }
+
+          const startVal = startInput.value; 
+          const endVal = endInput.value;
+
+          let startDate = null, startTime = null, endDate = null, endTime = null;
+
+          if (startVal.includes("T")) {
+              const parts = startVal.split("T");
+              startDate = parts[0];
+              startTime = parts[1];
+          } else {
+              startDate = startVal;
+          }
+
+          if (endVal && endVal.includes("T")) {
+              const parts = endVal.split("T");
+              endDate = parts[0];
+              endTime = parts[1];
+          } else {
+              endDate = endVal || startDate;
+          }
+
+                 const invitedUserIds = invitedUsers.map(u => u.id);
+
+
+        const payload = {
+          Title: title,
+          Description: desc,
+          StartDate: startDate,
+          EndDate: endDate,
+          StartTime: allDay ? null : startTime,
+          EndTime: allDay ? null : endTime,
+          AllDay: allDay,
+          EventType: document.getElementById("eventCategory").value,
+          InvitedUserIds: invitedUsers.map(u => u.id)
+        };
+
+          
+          if (eventFormPanel.dataset.editingId) {
+             payload.Id = parseInt(eventFormPanel.dataset.editingId);
+          }
+
+
+          try {
+            // 🧩 NEU: Keine versehentliche Überschreibung
+            const endpoint = payload.Id && payload.Id > 0
+              ? "/Calendar/UpdateEvent"
+              : "/Calendar/SaveEvent";
+
+            const res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) throw new Error("Fehler beim Speichern des Termins");
+
+            alert(payload.Id ? "✅ Termin aktualisiert!" : "✅ Termin gespeichert!");
+
+            // 🧩 Reset – damit beim nächsten Speichern kein anderer überschrieben wird
+            eventFormPanel.style.display = "none";
+            delete eventFormPanel.dataset.editingId;
+            document.getElementById("dayViewPanel").style.display = "none";
+
+            await loadEventsFromDb();
+          } catch (err) {
+            alert("❌ " + err.message);
+          }
+        });
+
+
+                  function combineDateAndTime(dateStr, timeStr) {
+          if (!dateStr) return null;
+          if (!timeStr) return new Date(`${dateStr}T00:00:00`);
+          const clean = timeStr.includes("T")
+            ? timeStr.split("T")[1].substring(0, 5)
+            : timeStr.substring(0, 5);
+          return new Date(`${dateStr}T${clean}`);
+        }
+
+        function overlaps(a, b) {
+          return a.start < b.end && b.start < a.end;
+        }
+
+
+
+
+                // === Event-Klick zum Bearbeiten ===
+        function attachEventClickHandlers() {
+          document.querySelectorAll(".day-event").forEach(evDiv => {
+            evDiv.addEventListener("click", () => {
+              const eventId = evDiv.dataset.id;
+              openEventEditor(eventId);
+            });
+          });
+        }
+
+        // 🔹 Termin-Daten aus DB holen und Formular füllen
+        // 🔹 Termin-Daten aus DB holen und Formular füllen
+        async function openEventEditor(eventId) {
+          try {
+            const res = await fetch(`/Calendar/GetEvent/${eventId}`);
+            if (!res.ok) throw new Error("Termin nicht gefunden");
+            const ev = await res.json();
+
+            // Formular anzeigen und füllen
+            eventFormPanel.style.display = "flex";
+            eventTitleInput.value = ev.title || ev.Title || "";
+            eventDescription.value = ev.description || ev.Description || "";
+            
+            const startInput = document.getElementById("eventStartDateTime");
+            const endInput = document.getElementById("eventEndDateTime");
+            const allDaySwitch = document.getElementById("allDaySwitch");
+
+            if (ev.allDay || (!ev.startTime && !ev.endTime && !ev.StartTime && !ev.EndTime)) {
+                 allDaySwitch.checked = true;
+                 startInput.type = "date";
+                 endInput.type = "date";
+                 startInput.value = (ev.startDate || ev.StartDate).split('T')[0];
+                 endInput.value = (ev.endDate || ev.EndDate || ev.startDate || ev.StartDate).split('T')[0];
+            } else {
+                 allDaySwitch.checked = false;
+                 startInput.type = "datetime-local";
+                 endInput.type = "datetime-local";
+                 
+                 const sDate = (ev.startDate || ev.StartDate).split('T')[0];
+                 const sTime = (ev.startTime || ev.StartTime || "00:00").substring(0, 5);
+                 startInput.value = `${sDate}T${sTime}`;
+                 
+                 const eDate = (ev.endDate || ev.EndDate || sDate).split('T')[0];
+                 const eTime = (ev.endTime || ev.EndTime || "01:00").substring(0, 5);
+                 endInput.value = `${eDate}T${eTime}`;
+            }
+
+            // ID speichern für später
+            eventFormPanel.dataset.editingId = ev.id;
+                    renderSelectedParticipants(ev);
+        // 🗑️ Löschbutton einfügen, falls noch nicht vorhanden
+        let deleteBtn = document.getElementById("deleteEventBtn");
+        if (!deleteBtn) {
+          deleteBtn = document.createElement("button");
+          deleteBtn.id = "deleteEventBtn";
+          deleteBtn.className = "btn btn-danger btn-sm mt-2 w-100";
+          deleteBtn.innerHTML = '<i class="bi bi-trash"></i> Löschen';
+          eventFormPanel.appendChild(deleteBtn);
+        }
+                // 🧩 Aufgabe öffnen Button
+        let aufgabeBtn = document.getElementById("openAufgabeBtn");
+
+        const aufgabeId = ev.relatedAufgabeId || ev.RelatedAufgabeId;
+        const workflowId = ev.workflowId || ev.WorkflowId;
+        const stepId = ev.stepId || ev.StepId;
+
+        if (aufgabeId) {
+            if (!aufgabeBtn) {
+                aufgabeBtn = document.createElement("button");
+                aufgabeBtn.id = "openAufgabeBtn";
+                aufgabeBtn.className = "btn btn-success btn-sm mt-2 w-100";
+                aufgabeBtn.innerHTML = '<i class="bi bi-list-check"></i> Aufgabe öffnen';
+                eventFormPanel.appendChild(aufgabeBtn);
+            }
+
+            aufgabeBtn.onclick = () => {
+                // 🔹 Workflow-Aufgabe → direkt zu Workflow-Step
+                if (workflowId && stepId) {
+                    window.location.href = `/Workflows/StepDetail/${workflowId}/${stepId}`;
+                }
+                // 🔹 Normale Aufgabe → Modal auf Aufgaben-Seite öffnen
+                else {
+                    // Speichere Aufgabe-ID in LocalStorage
+                    localStorage.setItem("openTaskFromCalendar", aufgabeId);
+                    window.location.href = "/Tests/Aufgaben";
+                }
+            };
+        } else if (aufgabeBtn) {
+            aufgabeBtn.remove();
+        }
+
+
+
+        // Klick-Handler aktualisieren (immer neu binden)
+        deleteBtn.onclick = async () => {
+          if (!confirm("Diesen Termin wirklich löschen?")) return;
+
+          try {
+            const res = await fetch(`/Calendar/DeleteEvent/${eventId}`, {
+              method: "DELETE",
+              credentials: "include"
+            });
+
+            if (!res.ok) throw new Error("Fehler beim Löschen des Termins");
+            alert("🗑️ Termin gelöscht!");
+
+            // Formular schließen und Kalender aktualisieren
+            eventFormPanel.style.display = "none";
+            document.getElementById("dayViewPanel").style.display = "none";
+            await loadEventsFromDb();
+          } catch (err) {
+            alert("Fehler beim Löschen: " + err.message);
+          }
+        };
+
+          } catch (err) {
+            alert("Fehler beim Laden: " + err.message);
+          }
+        }
+
+
+
+
+        // === Event laden aus DB ===
+                async function loadEventsFromDb() {
+          try {
+            const res = await fetch("/Calendar/GetEvents", {
+              credentials: "include" // 🔹 wichtig für Authentifizierung (Cookie)
+            });
+
+            if (!res.ok) throw new Error("Serverfehler beim Laden der Termine");
+
+            const data = await res.json();
+
+            // 🔹 Globale Variable aktualisieren (nicht const events!)
+            events = data.map(ev => ({
+              id: ev.id,
+              title: ev.title,
+              description: ev.description,
+              startDate: ev.startDate,
+              endDate: ev.endDate,
+              startTime: ev.startTime,
+              endTime: ev.endTime,
+              color: ev.color,
+              allDay: ev.allDay
+            }));
+
+            console.log("✅ Termine geladen:", events);
+
+            // 🔹 Kalender neu zeichnen
+            renderCalendar();
+
+          } catch (err) {
+            console.error("Fehler beim Laden der Termine:", err);
+          }
+        }
+
+        // === Button: Neues Event ===
+                if (addEventBtn) {
+          addEventBtn.addEventListener("click", () => openEventForm(activeDay));
+        }
+
+
+        // === Initiales Laden ===
+        loadEventsFromDb();
+      } else {
+        console.log("Calendar elements not found on this page - skipping calendar initialization");
+      }
+                   async function loadUsers() {
+          const res = await fetch("/Calendar/GetUsers");
+          allUsers = await res.json();
+          renderUserList(allUsers);
+        }
+                // Invite Dropdown öffnen/schließen
+      
+
+
+            function removeParticipant(id) {
+            invitedUsers = invitedUsers.filter(u => u.id !== id);
+            renderSelectedParticipants();
+            renderUserList(allUsers);
+        }
+
+
+                function resetEventForm(clearDateTime = false) {
+            // Textfelder
+            document.getElementById("eventTitle").value = "";
+            document.getElementById("eventDescription").value = "";
+
+            // Typ zurücksetzen
+            document.getElementById("eventCategory").value = "personal";
+
+            // Editing-ID entfernen
+            const panel = document.getElementById("eventFormPanel");
+            delete panel.dataset.editingId;
+
+            // 👥 Teilnehmer leeren
+            invitedUsers = [];
+            renderSelectedParticipants();
+            renderUserList(allUsers);
+
+            // Optional: Datum/Uhrzeit ebenfalls zurücksetzen
+            if (clearDateTime) {
+                document.getElementById("eventStartDateTime").value = "";
+                document.getElementById("eventEndDateTime").value = "";
+            }
+        }
+
+
+                function renderUserList(users) {
+          const list = document.getElementById("inviteUserList");
+          list.innerHTML = "";
+
+          users.forEach(u => {
+            if (invitedUsers.some(x => x.id === u.id)) return;
+
+            const div = document.createElement("div");
+            div.className = "invite-user";
+            div.textContent = u.fullName;
+            div.onclick = () => addParticipant(u);
+            list.appendChild(div);
+          });
+        }
+
+                const inviteSearchInput = document.getElementById("inviteSearch");
+        if (inviteSearchInput) {
+            inviteSearchInput.addEventListener("input", e => {
+                const q = e.target.value.toLowerCase();
+                renderUserList(
+                    allUsers.filter(u => u.fullName.toLowerCase().includes(q))
+                );
+            });
+        }
+
+                            function addParticipant(user) {
+          invitedUsers.push(user);
+          renderSelectedParticipants();
+          renderUserList(allUsers);
+
+          // 🔒 Dropdown schließen
+          const inviteDropdown = document.getElementById("inviteDropdown");
+          if (inviteDropdown) inviteDropdown.classList.add("hidden");
+
+          // ✨ Suchfeld zurücksetzen
+          const search = document.getElementById("inviteSearch");
+          if (search) search.value = "";
+        }
+
+
+                       function renderSelectedParticipants(ev = null) {
+          const box = document.getElementById("selectedParticipants");
+          box.innerHTML = "";
+
+          // 👥 Falls ein Event mit echten Teilnehmern geöffnet wurde
+          if (ev && ev.participants && ev.participants.length > 0) {
+            const isMulti = ev.participants.length > 1; // mehr als 1 Person
+
+            ev.participants.forEach(p => {
+              const chip = document.createElement("div");
+              chip.className = "participant-chip";
+
+              // 🧩 Wenn ich selbst dieser Teilnehmer bin → "Du"
+              let displayName =
+                p.userId === ev.currentUserId
+                  ? "Du"
+                  : p.name || p.fullName || "(Unbekannt)";
+
+              // 🧩 Wenn nur ich dabei bin → gar nichts anzeigen
+              if (!isMulti && p.userId === ev.currentUserId) {
+                box.innerHTML = ""; // kein Teilnehmertext
+                return;
+              }
+
+              const statusIcon =
+                p.status === 1 ? " ✅" :
+                p.status === 2 ? " ❌" : " ⏳";
+
+              chip.innerHTML = `${displayName}${statusIcon}`;
+              box.appendChild(chip);
+            });
+
+            if (!box.innerHTML.trim()) {
+              box.innerHTML = "<i>Keine weiteren Teilnehmer</i>";
+            }
+          }
+
+          // 🟢 Falls das ein neues Event ist (Erstellung)
+          else if (invitedUsers.length > 0) {
+            invitedUsers.forEach(u => {
+              const chip = document.createElement("div");
+              chip.className = "participant-chip";
+              chip.innerHTML = `${u.fullName} <span onclick="removeParticipant('${u.id}')">×</span>`;
+              box.appendChild(chip);
+            });
+          } else {
+            box.innerHTML = "<i>Keine Teilnehmer</i>";
+          }
+        }
+
+
+
+
+            
+                window.removeParticipant = function (id) {
+          invitedUsers = invitedUsers.filter(u => u.id !== id);
+          renderSelectedParticipants();
+          renderUserList(allUsers);
+        };
+            
+    }); // End of DOMContentLoaded
+                  document.addEventListener("DOMContentLoaded", () => {
+          const inviteBtn = document.getElementById("inviteBtn");
+          const inviteDropdown = document.getElementById("inviteDropdown");
+
+          if (!inviteBtn || !inviteDropdown) return;
+
+          // Öffnen/Schließen beim Klick auf den Button
+          inviteBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isHidden = inviteDropdown.classList.contains("hidden");
+            document.querySelectorAll(".invite-dropdown:not(.hidden)").forEach(dd => dd.classList.add("hidden")); // schließt andere Dropdowns
+            if (isHidden) inviteDropdown.classList.remove("hidden");
+            else inviteDropdown.classList.add("hidden");
+          });
+
+          // Klick im Dropdown soll es offen halten
+          inviteDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+          // 🚀 Klick außerhalb => Dropdown schließen (im Capturing-Phase!)
+          window.addEventListener(
+            "click",
+            (e) => {
+              const clickedInside =
+                inviteDropdown.contains(e.target) || inviteBtn.contains(e.target);
+              if (!clickedInside) inviteDropdown.classList.add("hidden");
+            },
+            true // 👈 entscheidend: capturing phase
+          );
+        });
+
+</script>
+</body>
+</html>
+
+
+
+
+

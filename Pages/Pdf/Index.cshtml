@@ -1,0 +1,53 @@
+﻿@page
+@model DmsProjeckt.Pages.Pdf.IndexModel
+@{
+    ViewData["Title"] = "Test WebDAV Upload";
+}
+
+<h2>Test d’envoi de fichier vers le NAS (WebDAV)</h2>
+
+<form id="uploadForm" enctype="multipart/form-data">
+    <div>
+        <label for="file">Choisir un fichier :</label>
+        <input type="file" id="file" name="file" />
+    </div>
+    <button type="submit">Envoyer au NAS</button>
+</form>
+
+<div id="result" style="margin-top: 20px; font-weight: bold;"></div>
+
+<script>
+    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById("file");
+        if (!fileInput.files.length) {
+            alert("Veuillez choisir un fichier !");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerText = "Envoi en cours... ⏳";
+
+        try {
+            const response = await fetch("/api/WebDavTest/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                resultDiv.style.color = "green";
+            } else {
+                resultDiv.style.color = "red";
+            }
+            resultDiv.innerText = data.message;
+        } catch (error) {
+            resultDiv.style.color = "red";
+            resultDiv.innerText = "Erreur lors de l'envoi : " + error.message;
+        }
+    });
+</script>

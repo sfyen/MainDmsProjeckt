@@ -1,0 +1,314 @@
+﻿@model dynamic
+@using DmsProjeckt.Helpers
+@using System.Text.Encodings.Web
+@using System.Text.Json
+
+@{
+    bool isDokument = Model is DmsProjeckt.Data.Dokumente;
+    bool isVersion = Model is DmsProjeckt.Data.DokumentVersionen;
+    bool isFile = Model is DmsProjeckt.Data.DmsFile;
+
+    // ✅ Hierarchie
+    bool isVersionChild = Model?.IsVersion ?? false;
+    Guid? originalId = Model?.OriginalId;
+
+    // 📎 ID
+    string id = (Model?.Id != null) ? Model.Id.ToString() : Guid.NewGuid().ToString();
+
+    // 📄 Dateiname
+    string name = (isDokument || isVersion)
+        ? (Model?.Dateiname ?? "-")
+        : (Model?.Name ?? "-");
+
+    // 🏢 Abteilung
+    string abteilung = (isDokument && Model?.Abteilung != null)
+        ? (Model.Abteilung?.Name ?? "Unbekannt")
+        : (Model?.AbteilungName ?? "Unbekannt");
+
+    string kategorie = Model?.Kategorie ?? "Allgemein";
+    string benutzer = "-";
+
+    // 👤 Benutzername
+    if (isDokument && Model?.ApplicationUser != null)
+        benutzer = $"{Model.ApplicationUser?.Vorname ?? ""} {Model.ApplicationUser?.Nachname ?? ""}".Trim();
+    else if (Model?.BenutzerVorname != null || Model?.BenutzerNachname != null)
+        benutzer = $"{Model.BenutzerVorname ?? ""} {Model.BenutzerNachname ?? ""}".Trim();
+    else if (!string.IsNullOrEmpty(Model?.BenutzerVollerName))
+        benutzer = Model.BenutzerVollerName;
+    else if (!string.IsNullOrEmpty(Model?.ApplicationUserName))
+        benutzer = Model.ApplicationUserName;
+
+    // 🕒 Hochgeladen am
+    string hochgeladen = (Model?.HochgeladenAm != null)
+        ? Convert.ToDateTime(Model.HochgeladenAm).ToString("dd.MM.yy HH:mm")
+        : "-";
+
+    // 📌 Status
+    string status = isDokument
+        ? (Model?.dtStatus?.ToString() ?? "Unbekannt")
+        : (Model?.Status ?? "Unbekannt");
+
+    // 🔗 ObjectPath
+    string safeObjectPath = "";
+    if (isDokument && Model?.ObjectPath != null)
+        safeObjectPath = Model.ObjectPath;
+    else if (!isDokument && Model?.Path != null)
+        safeObjectPath = Model.Path;
+    safeObjectPath = safeObjectPath.Replace("'", "\\'");
+
+    bool estSigne = Model?.EstSigne ?? false;
+    bool isIndexed = Model?.IsIndexed ?? false;
+    bool isChunked = safeObjectPath.Contains("/versionen/chunks/", StringComparison.OrdinalIgnoreCase);
+
+    // 🎨 Icon
+    string iconHtml = !string.IsNullOrEmpty(Model?.Icon)
+        ? $"<i class='{Model.Icon} me-1'></i>"
+        : kategorie.ToLower() switch
+        {
+            "archiv" => "<i class='fas fa-archive text-warning me-1'></i>",
+            _ when isChunked => "<i class='bi bi-layers-half text-warning me-1'></i>",
+            _ when isVersion => "<i class='bi bi-file-earmark-diff text-info me-1'></i>",
+            _ => "<i class='bi bi-file-earmark-text text-primary me-1'></i>"
+        };
+
+    // 📋 Metadaten
+    var meta = Model?.MetadatenObjekt ?? new DmsProjeckt.Data.Metadaten();
+
+    var stdMetaObj = new
+    {
+        Id = id,
+        Name = name,
+        Kategorie = meta.Kategorie ?? kategorie,
+        Beschreibung = meta.Beschreibung ?? "-",
+        Titel = meta.Titel ?? "-",
+        Rechnungsnummer = meta.Rechnungsnummer ?? "-",
+        Kundennummer = meta.Kundennummer ?? "-",
+        Rechnungsbetrag = meta.Rechnungsbetrag ?? 0,
+        Nettobetrag = meta.Nettobetrag ?? 0,
+        Steuerbetrag = meta.Steuerbetrag ?? 0,
+        Gesamtpreis = meta.Gesamtpreis ?? 0,
+        Rechnungsdatum = meta.Rechnungsdatum,
+        Faelligkeitsdatum = meta.Faelligkeitsdatum,
+        IBAN = meta.IBAN ?? "-",
+        BIC = meta.BIC ?? "-",
+        Email = meta.Email ?? "-",
+        Telefon = meta.Telefon ?? "-",
+        Adresse = meta.Adresse ?? "-",
+        Abteilung = abteilung,
+        HochgeladenAm = hochgeladen,
+        Status = status,
+        Indexiert = (isIndexed ? "Ja" : "Nein"),
+        PdfAutor = meta.PdfAutor ?? "-",
+        PdfBetreff = meta.PdfBetreff ?? "-",
+        PdfSchluesselwoerter = meta.PdfSchluesselwoerter ?? "-"
+    };
+
+    string stdMeta = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(stdMetaObj)));
+    string idxMeta = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{}"));
+    string usrMeta = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("[]"));
+
+    // 🧩 Korrekte ID
+    string realId = id;
+    if (Model is DmsProjeckt.Data.DokumentVersionen versionModel)
+        realId = versionModel.Id.ToString();
+    else if (Model is DmsProjeckt.Data.DmsFile dmsFile)
+    {
+        if (dmsFile.GuidId.HasValue)
+            realId = dmsFile.GuidId.Value.ToString();
+        else if (dmsFile.OriginalId != Guid.Empty)
+            realId = dmsFile.OriginalId.ToString();
+    }
+
+    // 🔗 PDF-Preview-Link
+    string previewUrl = $"/api/pdfproxy/view/{realId}";
+}
+
+<!-- ====================================================== -->
+<!-- 🧩 TABLE ROW -->
+<!-- ====================================================== -->
+<tr id="file-@Model.Id"
+    data-path="@safeObjectPath"
+    data-original-id="@(originalId != Guid.Empty && originalId != null ? originalId : id)"
+    class="@(isVersionChild ? "" : "")"
+    @(isVersionChild ? "style='display:none;'" : "")
+    ondblclick="openPreview('@name','@previewUrl','@realId',@(isVersion.ToString().ToLower()))"
+    oncontextmenu="showFileContextMenuDynamic(
+        event,
+        '@realId',
+        '@safeObjectPath',
+        '@(Model?.SasUrl ?? "")',
+        '@stdMeta',
+        '@idxMeta',
+        '@usrMeta',
+        @(estSigne.ToString().ToLower()),
+        @(isIndexed.ToString().ToLower()),
+        true, true, '@JavaScriptEncoder.Default.Encode(name)'); return false;">
+
+    <!-- 📄 DATEINAME -->
+    <td class="fw-bold text-dark align-middle">
+        @if (!isVersionChild && (Model?.HasVersions ?? false))
+        {
+            <span class="toggle-icon" onclick="toggleVersions('@id', event)">
+
+                <i class="bi bi-caret-right-fill"></i>
+            </span>
+        }
+
+
+
+        @Html.Raw(iconHtml)
+        <a href="javascript:void(0)"
+           onclick="openPreview('@name','@previewUrl','@realId',@(isVersion.ToString().ToLower()))"
+           class="text-decoration-none text-dark fw-bold">
+            @name
+        </a>
+    </td>
+
+    <!-- 🏢 ABTEILUNG -->
+    <td class="text-dark small align-middle">@abteilung</td>
+
+    <!-- 🗂️ KATEGORIE -->
+    <td class="text-dark small align-middle">@kategorie</td>
+
+    <!-- 👤 BENUTZER -->
+    <td class="text-dark small align-middle">
+        <i class="bi bi-person-circle text-secondary me-1"></i>@benutzer
+    </td>
+
+    <!-- 📅 HOCHGELADEN -->
+    <td class="text-dark small align-middle">@hochgeladen</td>
+
+    <!-- ⚙️ AKTIONEN -->
+    <td class="text-center align-middle">
+        <button class="btn btn-sm btn-outline-light"
+                title="Optionen"
+                onclick="event.stopPropagation(); showFileContextMenuDynamic(
+                    event,
+                    '@realId',
+                    '@safeObjectPath',
+                    '@(Model?.SasUrl ?? "")',
+                    '@stdMeta',
+                    '@idxMeta',
+                    '@usrMeta',
+                    @(estSigne.ToString().ToLower()),
+                    @(isIndexed.ToString().ToLower()),
+                    true, true, '@JavaScriptEncoder.Default.Encode(name)'); return false;">
+            <i class="bi bi-three-dots-vertical"></i>
+        </button>
+    </td>
+
+    <!-- 📌 STATUS -->
+    <td class="fw-bold text-dark align-middle">
+        <span class="badge @(StatusBadgeHelper.GetStatusBadgeClass(status))">@status</span>
+    </td>
+</tr>
+
+
+<script>
+    function toggleVersions(originalId, event) {
+        event.stopPropagation();
+
+        const toggle = event.currentTarget;
+        toggle.classList.toggle("open");
+
+        const versionRows = document.querySelectorAll(`.version-row[data-original-id='${originalId}']`);
+
+        versionRows.forEach(row => {
+            if (row.classList.contains("show")) {
+                row.classList.remove("show");
+                setTimeout(() => row.style.display = "none", 150);
+            } else {
+                row.style.display = "table-row";
+                setTimeout(() => row.classList.add("show"), 10);
+            }
+        });
+    }
+
+    function toggleVersions(originalId, event) {
+        event.stopPropagation();
+        const toggle = event.currentTarget;
+        toggle.classList.toggle("open");
+
+        const rows = document.querySelectorAll(`.version-row[data-original-id='${originalId}']`);
+        rows.forEach(row => {
+            if (row.style.display === "table-row") {
+                row.style.opacity = "0";
+                setTimeout(() => row.style.display = "none", 150);
+            } else {
+                row.style.display = "table-row";
+                row.style.opacity = "0";
+                setTimeout(() => row.style.opacity = "1", 100);
+            }
+        });
+
+        const icon = toggle.querySelector("i");
+        if (icon) icon.classList.toggle("bi-caret-down-fill");
+    }
+
+</script>
+
+
+<!-- ====================================================== -->
+<!-- 🎨 STYLE -->
+<!-- ====================================================== -->
+<style>
+    /* Modern White Theme for Document Rows */
+    .original-row {
+        background-color: white;
+        transition: background-color 0.15s ease-in-out;
+    }
+
+    .original-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Version rows with subtle distinction */
+    .version-row {
+        background-color: #f9f9f9;
+        border-left: 3px solid #4caf50;
+        transition: background-color 0.15s ease-in-out, border-left-color 0.3s ease;
+    }
+
+    .version-row:hover {
+        background-color: #f0f0f0;
+        border-left-color: #66bb6a;
+    }
+
+    .version-row.show {
+        opacity: 1;
+    }
+
+    /* Indentation for versions */
+    .version-row td:first-child {
+        padding-left: 2rem !important;
+        position: relative;
+    }
+
+    /* Separation line between versions */
+    .version-row:not(:first-child) {
+        border-top: 1px dashed #e0e0e0;
+    }
+
+    /* Toggle icon */
+    .toggle-icon {
+        cursor: pointer;
+        margin-right: 6px;
+        transition: transform 0.2s ease;
+        color: #666;
+    }
+
+    .toggle-icon.open i {
+        transform: rotate(90deg);
+        color: #4caf50;
+    }
+
+    /* Table alignment */
+    .table td {
+        vertical-align: middle !important;
+    }
+
+    /* General readability */
+    .table tr {
+        transition: background-color 0.15s ease-in-out;
+    }
+</style>

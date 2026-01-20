@@ -1,0 +1,24 @@
+19.12.2025 13:02:01: ModelState Valid? False
+Workflow.Steps[0].Dokumente: The Dokumente field is required.
+Workflow.Steps[0].Kommentare: The Kommentare field is required.
+----------------------
+19.12.2025 13:10:20: ModelState Valid? False
+Workflow.Steps[0].Dokumente: The Dokumente field is required.
+Workflow.Steps[0].Kommentare: The Kommentare field is required.
+----------------------
+19.12.2025 13:10:29: ModelState Valid? False
+Workflow.Steps[0].Dokumente: The Dokumente field is required.
+Workflow.Steps[0].Kommentare: The Kommentare field is required.
+----------------------
+19.12.2025 13:26:28: ModelState Valid? False
+Workflow.Steps[0].Dokumente: The Dokumente field is required.
+Workflow.Steps[0].Kommentare: The Kommentare field is required.
+----------------------
+19.12.2025 13:26:46: ModelState Valid? False
+Workflow.Steps[0].Dokumente: The Dokumente field is required.
+Workflow.Steps[0].Kommentare: The Kommentare field is required.
+----------------------
+05.01.2026 08:28:50: ModelState Valid? False
+Workflow.Steps[0].Dokumente: The Dokumente field is required.
+Workflow.Steps[0].Kommentare: The Kommentare field is required.
+----------------------

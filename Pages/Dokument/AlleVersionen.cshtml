@@ -1,0 +1,624 @@
+﻿@page
+@model DmsProjeckt.Pages.Dokument.AlleVersionenModel
+@section Styles {
+    <style>
+        /* Modern White Design */
+        .modern-versions-wrapper {
+            background: white;
+            border-radius: 1.1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 2.5rem 2rem;
+            margin: 2rem 0;
+        }
+
+        /* Modern Header */
+        .versions-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .versions-header h2 {
+            color: #000;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .versions-header p {
+            color: #666;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Stats Box */
+        .stats-box {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.8rem;
+            padding: 1rem 1.5rem;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-box strong {
+            color: #000;
+            font-weight: 700;
+        }
+
+        /* Search Box */
+        #searchBox {
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: #000;
+            border-radius: 0.6rem;
+            padding: 0.8rem 1rem;
+            transition: all 0.2s;
+        }
+
+        #searchBox:focus {
+            background: white;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+            outline: none;
+        }
+
+        /* Modern Buttons */
+        .btn-primary-dms {
+            background: #000;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            padding: 0.5rem 1.2rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary-dms:hover {
+            background: #333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            color: #fff;
+        }
+
+        .btn-outline-dms {
+            background: transparent;
+            border: 1px solid #e0e0e0;
+            color: #666;
+            font-weight: 500;
+            padding: 0.5rem 1.2rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-dms:hover {
+            border-color: #000;
+            color: #000;
+            background: #f5f5f5;
+        }
+
+        /* Modern Table Container */
+        .table-responsive {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.8rem;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .table {
+            margin-bottom: 0;
+            color: #333;
+            background-color: white;
+        }
+
+        .table thead th {
+            background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+            color: #000;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 1rem;
+        }
+
+        .table tbody tr {
+            background-color: white;
+            border-bottom: 1px solid #f5f5f5;
+            transition: all 0.2s;
+        }
+
+        .table tbody td {
+            color: #333;
+            padding: 1rem;
+        }
+
+        .table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.001);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table-group-header {
+            background-color: #f5f5f5 !important;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .table-group-header strong {
+            color: #000;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.4rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .badge-original {
+            background: #e8e8e8;
+            color: #000;
+            border: 1px solid #d0d0d0;
+        }
+
+        .badge-version {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Action Buttons in Table */
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.4rem;
+            border: 1px solid #e0e0e0;
+            color: #666;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #000;
+            border-color: #000;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        /* Modals & Offcanvas */
+        .modal-content, .offcanvas {
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: #000;
+        }
+
+        .modal-header, .offcanvas-header {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .modal-title, .offcanvas-title {
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-close-white {
+            filter: none;
+        }
+
+        /* Form Controls in Modals */
+        .modal .form-control, .offcanvas .form-control {
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: #000;
+        }
+
+        .modal .form-control:focus, .offcanvas .form-control:focus {
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+        }
+
+        .modal label, .offcanvas label {
+            color: #000;
+            font-weight: 600;
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu {
+            background: white;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .dropdown-item {
+            color: #333;
+        }
+
+        .dropdown-item:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        /* Viewer */
+        .offcanvas-end {
+            width: 75% !important;
+            min-width: 800px;
+        }
+
+        .offcanvas-body {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #docFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Toggle Icons */
+        .toggle-group {
+            color: #000;
+            transition: transform 0.2s;
+        }
+
+        .toggle-group:hover {
+            transform: scale(1.2);
+        }
+
+        /* 🔄 Spinner Overlay */
+        .spinner-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+        .spinner-border-lg {
+            width: 3rem; height: 3rem; border-width: 0.25em;
+        }
+    </style>
+}
+
+<div class="modern-versions-wrapper">
+    <div class="versions-header">
+        <h2>📚 Alle versionierten Dokumente</h2>
+        <p>Verwalte alle Versionen deiner Dokumente zentral</p>
+    </div>
+
+<div class="stats-box mb-3">
+    <i class="bi bi-bar-chart-fill me-2" style="color: #000;"></i>
+    Total Originale: <strong>@Model.GruppierteVersionen.Count</strong> |
+    Gesamt Versionen: <strong>@Model.GruppierteVersionen.Sum(g => g.Versions.Count)</strong>
+</div>
+
+<input type="text" id="searchBox" class="form-control form-control-sm mb-3" placeholder="🔍 Suche…" />
+
+<div class="text-end mb-3">
+    <a asp-page-handler="ExportCsv" class="btn btn-outline-dms btn-sm"><i class="bi bi-filetype-csv"></i> CSV</a>
+    <a asp-page-handler="ExportExcel" class="btn btn-outline-dms btn-sm"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    <a asp-page-handler="ExportPdf" class="btn btn-outline-dms btn-sm"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+</div>
+
+<!-- TABLE -->
+<div class="table-responsive mb-5">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th style="width: 5%;"></th>
+                <th style="width: 30%;">📄 Version / Kategorie</th>
+                <th style="width: 15%;">Version Label</th>
+                <th style="width: 20%;">🗂️ Kategorie</th>
+                <th style="width: 25%;">📁 ObjectPath</th>
+                <th style="width: 15%;">📅 Hochgeladen am</th>
+                <th style="width: 20%;">⚙️ Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int gi = 0; gi < Model.GruppierteVersionen.Count; gi++)
+            {
+                var grp = Model.GruppierteVersionen[gi];
+                var gid = $"grp-{gi}";
+                var versions = grp.Versions.OrderByDescending(v => v.HochgeladenAm).ToList();
+
+                <tr class="table-group-header" data-group="@gid">
+                    <td colspan="7">
+                        <i class="bi bi-caret-down-square toggle-group me-2" style="color: #0d6efd;"></i>
+                        <strong><i class="bi bi-folder-symlink me-1"></i> @grp.OriginalName</strong>
+                        <span class="badge ms-2" style="background: #e2e6ea; color: #495057;">@($"{versions.Count} Version(en)")</span>
+                    </td>
+                </tr>
+
+                @for (int j = 0; j < versions.Count; j++)
+                {
+                    var v = versions[j];
+                    var isLatest = (!v.IsOriginal && j == 0);
+                    var entityId = v.IsOriginal ? v.OriginalId.ToString() : v.VersionId?.ToString();
+
+                    <tr class="version-row" data-group="@gid" data-url="/Dokument/AlleVersionen?handler=PdfProxy&id=@entityId">
+                        <td></td>
+                        <td>
+                            <span class="fw-bold text-dark">@v.Dateiname</span><br />
+                            @if (v.IsOriginal) { <span class="badge badge-original">Original</span> }
+                            else { 
+                                <span class="badge badge-version">Version</span>
+                                if (isLatest) { <span class="badge badge-version">Neueste</span> }
+                            }
+                            <span class="badge" style="background: #f8f9fa; border: 1px solid #dee2e6; color: #495057;">@v.Kategorie</span>
+                        </td>
+                        <td>@v.VersionLabel</td>
+                        <td>@v.Kategorie</td>
+                        <td class="text-break" style="color: #6c757d;">@v.ObjectPath</td>
+                        <td>@v.HochgeladenAm.ToString("dd.MM.yyyy - HH:mm")</td>
+                        <td class="text-nowrap">
+                            <button type="button" class="btn btn-action me-1 btn-preview" data-url="/Dokument/AlleVersionen?handler=PdfProxy&id=@entityId" title="Preview"><i class="bi bi-eye"></i></button>
+                            <a class="btn btn-action me-1" href="/Dokument/AlleVersionen?handler=PdfProxy&id=@entityId" download title="Download"><i class="bi bi-download"></i></a>
+                            <button class="btn btn-action me-1" onclick="openCommentModal('@entityId','@v.Dateiname')"><i class="bi bi-chat-dots"></i></button>
+                            
+                            <div class="btn-group">
+                                <button class="btn btn-action dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                <ul class="dropdown-menu shadow-sm" style="border: 1px solid #e0e0e0;">
+                                    <li><a class="dropdown-item" href="/Dokument/AlleVersionen?handler=PdfProxy&id=@entityId" download>⬇️ Download</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="openShareModal('@entityId','@v.Dateiname','/Dokument/AlleVersionen?handler=PdfProxy&id=@entityId')">✉️ Per E-Mail teilen</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+<div class="modal fade" id="commentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">📝 Kommentar / Historie</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="commentHistory">Lädt...</div>
+                <textarea id="newComment" class="form-control mt-2" placeholder="Neuer Kommentar…"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="saveComment()">Speichern</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">✉️ Dokument teilen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="shareDocId" />
+                <div class="mb-2">
+                    <label>Empfänger</label>
+                    <input type="email" id="shareTo" class="form-control" />
+                </div>
+                <div class="mb-2">
+                    <label>Betreff</label>
+                    <input type="text" id="shareSubject" class="form-control" />
+                </div>
+                <div class="mb-2">
+                    <label>Nachricht</label>
+                    <textarea id="shareMessage" class="form-control"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="sendEmail()">Senden</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dokument Viewer -->
+<div class="offcanvas offcanvas-end bg-dark text-light" tabindex="-1" id="docViewer">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">📄 Dokument Viewer</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body position-relative">
+        <!-- 🔄 Loading Spinner -->
+        <div id="versionPreviewSpinner" class="spinner-overlay d-none">
+            <div class="spinner-border text-primary spinner-border-lg" role="status"></div>
+            <p class="mt-3 text-muted fw-bold">Wird geladen...</p>
+        </div>
+        <iframe id="docFrame"></iframe>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+            popovers.forEach(el => {
+                new bootstrap.Popover(el, { trigger: 'click', html: true, sanitize: false });
+            });
+
+            document.querySelectorAll(".toggle-group").forEach(t => {
+                t.addEventListener("click", () => {
+                    const g = t.closest("tr").getAttribute("data-group");
+                    document.querySelectorAll(`.version-row[data-group='${g}']`)
+                        .forEach(r => r.classList.toggle("d-none"));
+                    t.classList.toggle("bi-caret-down-square");
+                    t.classList.toggle("bi-caret-right-square");
+                });
+            });
+
+            document.getElementById("searchBox").addEventListener("keyup", () => {
+                const val = document.getElementById("searchBox").value.toLowerCase();
+                document.querySelectorAll(".version-row").forEach(r => {
+                    r.style.display = r.innerText.toLowerCase().includes(val) ? "" : "none";
+                });
+            });
+
+            // Doppelklick öffnet Viewer
+            document.querySelectorAll(".version-row").forEach(r => {
+                r.addEventListener("dblclick", () => {
+                    const url = r.getAttribute("data-url");
+                    openViewer(url);
+                });
+            });
+        });
+
+        function downloadAll(orig) {
+            window.location = `?handler=DownloadAll&original=${orig}`;
+        }
+
+        function archiveOld(orig) {
+            if (!confirm("Alte Versionen wirklich archivieren?")) return;
+            fetch(`?handler=ArchiveOld&original=${orig}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            }).then(r => r.ok ? location.reload() : alert("Fehler beim Archivieren"));
+        }
+
+        let currentDocId;
+        function openCommentModal(docId, fname) {
+            currentDocId = docId;
+            fetch(`?handler=GetComments&docId=${docId}`)
+                .then(r => r.json())
+                .then(j => {
+                    document.getElementById("commentHistory").innerHTML = j.html;
+                    const modal = new bootstrap.Modal(document.getElementById('commentModal'));
+                    modal.show();
+                });
+        }
+
+        function saveComment() {
+            const txt = document.getElementById("newComment").value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            fetch(`?handler=AddComment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `dokumentId=${encodeURIComponent(currentDocId)}&text=${encodeURIComponent(txt)}`
+            }).then(r => {
+                if (r.ok) {
+                    document.getElementById("newComment").value = "";
+                    openCommentModal(currentDocId);
+                } else {
+                    alert("Fehler beim Speichern");
+                }
+            });
+        }
+
+        let currentShareDocId = null;
+              function openShareModal(docId, fname, url) {
+            const baseUrl = window.location.origin;
+
+            document.getElementById("shareDocId").value = docId;
+            document.getElementById("shareSubject").value = "Dokument teilen: " + fname;
+            document.getElementById("shareMessage").value = "Hier ist der Link: " + baseUrl + url;
+
+            const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+            modal.show();
+        }
+
+
+        function sendEmail() {
+            const docId = document.getElementById("shareDocId").value;
+            const to = document.getElementById("shareTo").value;
+            const subject = document.getElementById("shareSubject").value;
+            const message = document.getElementById("shareMessage").value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            if (!to) {
+                alert("Bitte eine Empfänger-Adresse eingeben!");
+                return;
+            }
+
+            fetch(`?handler=SendEmail`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: `dokumentId=${encodeURIComponent(docId)}&to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&message=${encodeURIComponent(message)}`
+            })
+            .then(r => r.json())
+            .then(j => {
+                if (j.ok) {
+                    alert("✅ E-Mail gesendet!");
+                    bootstrap.Modal.getInstance(document.getElementById('shareModal')).hide();
+                } else {
+                    alert("❌ Fehler: " + (j.error || "Senden fehlgeschlagen"));
+                }
+            })
+            .catch(err => {
+                alert("❌ Fehler: " + err);
+            });
+        }
+
+        function openViewer(url) {
+            const iframe = document.getElementById("docFrame");
+            const spinner = document.getElementById("versionPreviewSpinner");
+
+            // 🔄 Spinner logic
+            if(spinner) {
+                spinner.classList.remove("d-none");
+                iframe.classList.add("d-none");
+
+                iframe.onload = () => {
+                    spinner.classList.add("d-none");
+                    iframe.classList.remove("d-none");
+                };
+
+                // Fallback Timer
+                setTimeout(() => {
+                    if(!spinner.classList.contains("d-none")){
+                         spinner.classList.add("d-none");
+                         iframe.classList.remove("d-none");
+                    }
+                }, 15000);
+            }
+
+            iframe.src = url;
+            const viewer = new bootstrap.Offcanvas(document.getElementById("docViewer"));
+            viewer.show();
+        }
+
+                document.addEventListener("DOMContentLoaded", function () {
+            // ... dein existierender Code ...
+
+            // Preview-Button Klick → Viewer öffnen
+            document.querySelectorAll(".btn-preview").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const url = btn.getAttribute("data-url");
+                    openViewer(url);
+                });
+            });
+        });
+
+    </script>
+}

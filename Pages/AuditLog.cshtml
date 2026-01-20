@@ -1,0 +1,205 @@
+﻿@page
+@model DmsProjeckt.Pages.AuditLogModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<div class="modern-audit-wrapper">
+    <div class="audit-header">
+        <h2>📊 Audit Log</h2>
+        <p>Übersicht aller System-Aktivitäten und Änderungen</p>
+    </div>
+
+<form method="get" class="mb-4">
+    <div class="filter-section">
+        <label for="kategorie-filter">Kategorie filtern:</label>
+        <select id="kategorie-filter" name="KategorieFilter" class="modern-select" onchange="this.form.submit()">
+            <option value="">Alle Kategorien</option>
+            @foreach (var k in Model.Kategorien)
+            {
+                if (Model.KategorieFilter == k)
+                {
+                    <option value="@k" selected>@k</option>
+                }
+                else
+                {
+                    <option value="@k">@k</option>
+                }
+            }
+        </select>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="sortierbare-tabelle">
+        <thead>
+            <tr>
+                <th>Aktion</th>
+                <th>Benutzer</th>
+                <th>E-Mail</th>
+                <th>Zeitstempel</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.AuditLogEntries.Count == 0)
+            {
+                <tr>
+                    <td colspan="4">
+                        Kein Audit-Log gefunden.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                foreach (var log in Model.AuditLogEntries)
+                {
+                    <tr>
+                        <td>@log.Aktion</td>
+                        <td>
+                            <span>@log.BenutzerName</span>
+                        </td>
+                        <td>@log.BenutzerEmail</td>
+                        <td>@log.Zeitstempel.ToString("dd.MM.yyyy HH:mm:ss")</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+</div>
+
+<style>
+    /* Modern Audit Log Design */
+    .modern-audit-wrapper {
+        background: white;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        margin: 2rem 0;
+    }
+
+    /* Modern Header */
+    .audit-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .audit-header h2 {
+        color: #000;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .audit-header p {
+        color: #666;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background: #f9f9f9;
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        border: 1px solid #e0e0e0;
+    }
+
+    .filter-section label {
+        color: #000;
+        font-weight: 600;
+        margin-right: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .modern-select {
+        background: white;
+        color: #000;
+        border: 1.5px solid #e0e0e0;
+        padding: 0.6rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.2s;
+        min-width: 200px;
+    }
+
+    .modern-select:focus {
+        border-color: #000;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
+
+    /* Modern Table Container */
+    .table-responsive {
+        border-radius: 0.8rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+    }
+
+    .sortierbare-tabelle {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1rem;
+        background-color: white !important;
+        color: #333;
+        margin-bottom: 0;
+    }
+
+    .sortierbare-tabelle thead tr {
+        background: linear-gradient(to bottom, #fafafa, #f5f5f5) !important;
+    }
+
+    .sortierbare-tabelle th {
+        color: #000 !important;
+        font-weight: 600;
+        padding: 1rem;
+        border-bottom: 2px solid #e0e0e0;
+        text-align: left;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        background: transparent;
+    }
+
+    .sortierbare-tabelle tbody {
+        background-color: white !important;
+    }
+
+    .sortierbare-tabelle td {
+        padding: 1rem;
+        border-bottom: 1px solid #f5f5f5;
+        vertical-align: middle;
+        background-color: white;
+        color: #333 !important;
+    }
+
+    .sortierbare-tabelle tbody tr {
+        transition: all 0.2s;
+        background-color: white !important;
+    }
+
+    .sortierbare-tabelle tbody tr:nth-child(even) {
+        background-color: #fafafa !important;
+    }
+
+    .sortierbare-tabelle tbody tr:hover {
+        background: #f8f9fa !important;
+        transform: scale(1.001);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .sortierbare-tabelle td span {
+        color: #000 !important;
+        font-weight: 600;
+    }
+
+    .sortierbare-tabelle td[colspan="4"] {
+        text-align: center;
+        color: #999 !important;
+        padding: 3rem 1rem;
+        font-style: italic;
+        background-color: white !important;
+    }
+</style>

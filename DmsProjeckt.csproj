@@ -1,0 +1,96 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+	<!-- Suppression de fichiers obsolètes -->
+	<ItemGroup>
+		<Compile Remove="Controllers\AuthController.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="Native\libwkhtmltox.so" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- 🔹 Azure SDK -->
+		<PackageReference Include="Azure.AI.FormRecognizer" Version="4.1.0" />
+		<PackageReference Include="Azure.Search.Documents" Version="11.7.0" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
+		<!-- 🔹 Security pinning (fix CVEs) -->
+		<PackageReference Include="Azure.Identity" Version="1.11.4" />
+		<PackageReference Include="Microsoft.Identity.Client" Version="4.61.3" />
+		<!-- 🔹 PDF, Word & Excel -->
+		<PackageReference Include="DinkToPdf" Version="1.0.8" />
+		<PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
+		<PackageReference Include="EPPlus" Version="7.0.5" />
+		<!-- 🔹 Firebase / Google -->
+		<PackageReference Include="FirebaseAdmin" Version="3.4.0" />
+		<PackageReference Include="FirebaseDatabase.net" Version="5.0.0" />
+		<PackageReference Include="FirebaseStorage.net" Version="1.0.3" />
+		<PackageReference Include="Google.Apis.Auth" Version="1.72.0" />
+		<PackageReference Include="Google.Cloud.Storage.V1" Version="4.13.0" />
+		<PackageReference Include="Google.Cloud.Vision.V1" Version="3.7.0" />
+		<!-- 🔹 iText7 (PDF creation & signing) -->
+		<PackageReference Include="itext7" Version="9.1.0" />
+		<PackageReference Include="itext7.bouncy-castle-adapter" Version="9.3.0" />
+		<PackageReference Include="itext7.pdfhtml" Version="6.2.1" />
+		<!-- 🔹 Email -->
+		<PackageReference Include="MailKit" Version="4.13.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.10" />
+		<PackageReference Include="MimeKit" Version="4.13.0" />
+		
+		<!-- 🔹 ASP.NET & Identity -->
+		
+			<PackageReference Include="System.Net.Http" Version="4.3.4" />
+		
+
+
+		<!-- 🔹 Analyzers & Roslyn -->
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		
+		<!-- 🔹 Entity Framework Core -->
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+
+		<!-- 🔹 PDF génération -->
+		<PackageReference Include="PDFsharp" Version="6.2.1" />
+		<PackageReference Include="PdfSharpCore" Version="1.3.67" />
+		<!-- 🔹 Images (corrigé & sécurisé) -->
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+		<!-- 🔹 OCR & Analyse -->
+		<PackageReference Include="Tesseract" Version="5.2.0" />
+		<!-- 🔹 PDF Parsing -->
+		<PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
+		<PackageReference Include="WebDav.Client" Version="2.9.0" />
+		<!-- 🔹 Barcode / QR -->
+		<PackageReference Include="ZXing.Net" Version="0.16.10" />
+		<PackageReference Include="ZXing.Net.Bindings.SkiaSharp" Version="0.16.21" />
+	</ItemGroup>
+	<ItemGroup>
+		<Folder Include="Migrations\" />
+		<Folder Include="wwwroot\tmp\" />
+		<Folder Include="wwwroot\uploads\workflow\" />
+	</ItemGroup>
+	<!-- 🔹 Copie automatique du dossier tessdata -->
+	<ItemGroup>
+		<None Update="tessdata\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>

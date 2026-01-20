@@ -1,0 +1,227 @@
+﻿@page
+@model FavoritenModel
+@{
+    ViewData["Title"] = "Favoriten";
+}
+
+<div class="modern-page-wrapper">
+    <!-- Modern Header Section -->
+    <div style="text-align:center; margin-bottom:3rem; padding-bottom:2rem; border-bottom:1px solid #f0f0f0;">
+        <h2 style="color:#000; font-size:2rem; margin-bottom:0.5rem;">⭐ Favoriten</h2>
+        <p style="color:#666; font-size:1rem; margin:0;">Verwalte deine favorisierten Dokumente und Notizen</p>
+    </div>
+
+    <!-- Modern Tabs -->
+    <ul class="nav nav-tabs modern-tabs" id="favTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab">
+                📄 Dokumente
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab">
+                📝 Notizen
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" style="margin-top:2rem;">
+        <!-- Dokumente Tab -->
+        <div class="tab-pane fade show active" id="docs" role="tabpanel">
+            <div class="modern-section">
+                <h3 style="color:#000; font-size:1.2rem; margin-bottom:1.5rem; font-weight:600;">Favorisierte Dokumente</h3>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Dokument</th>
+                                <th>Hinzugefügt am</th>
+                                <th style="text-align:right;">Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in Model.FavoriteDocs)
+                            {
+                                <tr>
+                                    <td><strong>@doc.Titel</strong></td>
+                                    <td>@doc.HinzugefuegtAm.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td style="text-align:right;">
+                                        <a href="/Pdf/EditOne/@doc.Id" class="modern-btn-small">Anzeigen</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (!Model.FavoriteDocs.Any())
+                {
+                    <div class="empty-state">
+                        <p>📭 Keine favorisierten Dokumente gefunden.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Notizen Tab -->
+        <div class="tab-pane fade" id="notes" role="tabpanel">
+            <div class="modern-section">
+                <h3 style="color:#000; font-size:1.2rem; margin-bottom:1.5rem; font-weight:600;">Favorisierte Notizen</h3>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Notiz</th>
+                                <th>Hinzugefügt am</th>
+                                <th style="text-align:right;">Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var note in Model.FavoriteNotes)
+                            {
+                                <tr>
+                                    <td><strong>@note.Titel</strong></td>
+                                    <td>@note.HinzugefuegtAm.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td style="text-align:right;">
+                                        <a href="/Notiz/Index/@note.Id" class="modern-btn-small">Anzeigen</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (!Model.FavoriteNotes.Any())
+                {
+                    <div class="empty-state">
+                        <p>📭 Keine favorisierten Notizen gefunden.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modern-page-wrapper {
+        background: white;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        margin: 2rem 0;
+    }
+
+    /* Modern Tabs */
+    .modern-tabs {
+        border: none;
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0;
+    }
+
+    .modern-tabs .nav-item {
+        margin: 0;
+    }
+
+    .modern-tabs .nav-link {
+        background: #f5f5f5;
+        color: #666;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+
+    .modern-tabs .nav-link:hover {
+        background: #e8e8e8;
+        color: #000;
+    }
+
+    .modern-tabs .nav-link.active {
+        background: #000;
+        color: white;
+        border: 2px solid #000;
+    }
+
+    /* Modern Section */
+    .modern-section {
+        padding: 1.5rem 0;
+    }
+
+    /* Modern Table */
+    .modern-table-wrapper {
+        overflow: hidden;
+        border-radius: 0.8rem;
+        border: 1px solid #e0e0e0;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .modern-table thead {
+        background: #f5f5f5;
+    }
+
+    .modern-table thead th {
+        padding: 1rem 1.2rem;
+        text-align: left;
+        font-weight: 600;
+        color: #000;
+        font-size: 0.95rem;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .modern-table tbody td {
+        padding: 1rem 1.2rem;
+        color: #333;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .modern-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modern-table tbody tr:hover {
+        background: #fafafa;
+    }
+
+    /* Modern Button Small */
+    .modern-btn-small {
+        background: #000;
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+
+    .modern-btn-small:hover {
+        background: #333;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        color: white;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: #f9f9f9;
+        border-radius: 0.8rem;
+        border: 1px dashed #ddd;
+    }
+
+    .empty-state p {
+        color: #666;
+        font-size: 1.1rem;
+        margin: 0;
+    }
+</style>

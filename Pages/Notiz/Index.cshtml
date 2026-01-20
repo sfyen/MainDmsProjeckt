@@ -1,0 +1,709 @@
+﻿@page "{id?}"
+@model IndexModel
+@{
+    ViewData["Title"] = "Notizen";
+}
+@functions {
+    // Sidebar-Titel nach Apple-Logik bestimmen
+    string GetNoteSidebarTitle(DmsProjeckt.Data.Notiz note)
+    {
+        // Wenn explizit ein Titel gesetzt und nicht "Neue Notiz"
+        if (!string.IsNullOrWhiteSpace(note.Titel) && note.Titel != "Neue Notiz")
+            return note.Titel;
+
+        // Wenn kein Titel, aber Inhalt: erste Zeile vom Inhalt nehmen
+        if (!string.IsNullOrWhiteSpace(note.Inhalt))
+        {
+            var firstLine = note.Inhalt.Split('\n').FirstOrDefault() ?? "";
+            return string.IsNullOrWhiteSpace(firstLine) ? "Neue Notiz" : firstLine;
+        }
+
+        // Sonst Standard
+        return "Neue Notiz";
+    }
+}
+<style>
+    body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: #f5f5f5;
+        color: #000;
+        margin: 0;
+    }
+
+    .notes-container {
+        display: flex;
+        height: 92vh;
+        border-radius: 20px;
+        background: white;
+        margin: 2rem auto;
+        max-width: 1200px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    .notes-sidebar {
+        width: 280px;
+        background: #fafafa;
+        border-right: 1px solid #e0e0e0;
+        padding: 1.5rem 1rem;
+        display: flex;
+        flex-direction: column;
+        min-width: 220px;
+    }
+
+    .add-note-btn {
+        padding: 12px 0;
+        text-align: center;
+        background: white;
+        border-radius: 12px;
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+        border: 2px solid #000;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1em;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+        .add-note-btn:hover {
+            background: #000;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+    #note-search {
+        flex: 1;
+        padding: 10px 14px !important;
+        border-radius: 10px !important;
+        border: 2px solid #e0e0e0 !important;
+        background: white !important;
+        color: #000 !important;
+        font-size: 15px !important;
+        transition: all 0.3s ease;
+    }
+
+        #note-search:focus {
+            outline: none;
+            border-color: #000 !important;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #note-search::placeholder {
+            color: #999 !important;
+        }
+
+    .notes-sidebar ul {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0 0 0;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .notes-sidebar li {
+        margin: 0.5rem 0;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: white;
+        border: 1px solid #e0e0e0;
+        position: relative;
+    }
+
+        .notes-sidebar li:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #000;
+        }
+
+        .notes-sidebar li.active {
+            background: #f0f0f0;
+            border-color: #000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+    .notes-sidebar a {
+        text-decoration: none;
+        color: #000;
+        display: block;
+        padding: 14px 16px;
+        font-size: 1em;
+        font-weight: 500;
+        border-radius: 12px;
+    }
+
+    .note-date {
+        float: none;
+        color: #666;
+        font-size: 0.85em;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+    }
+
+    .notes-main {
+        flex: 1;
+        padding: 3rem 3rem 2rem 3rem;
+        background: white;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .edit-area {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-width: 800px;
+        flex: 1;
+    }
+
+    [contenteditable="true"] {
+        outline: none;
+        min-width: 100px;
+    }
+
+    .note-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #000;
+        background: transparent;
+        border: none;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        padding: 0;
+        outline: none;
+        min-height: 50px;
+        text-align: left !important;
+    }
+
+        .note-title:empty:before {
+            content: "Titel eingeben...";
+            color: #ccc;
+            font-weight: 400;
+        }
+
+    .note-content {
+        font-size: 1.1rem;
+        color: #333;
+        background: transparent;
+        border: none;
+        padding: 0;
+        outline: none;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        line-height: 1.8;
+        margin-bottom: 2rem;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        text-align: left !important;
+    }
+
+        .note-content:empty:before {
+            content: "Beginne zu schreiben...";
+            color: #ccc;
+        }
+
+    .auto-save-info {
+        font-size: 0.9em;
+        color: #999;
+        opacity: 0.9;
+        margin-left: 2px;
+    }
+
+    ::-webkit-scrollbar {
+        width: 8px;
+        background: #f5f5f5;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #d0d0d0;
+        border-radius: 10px;
+    }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b0b0b0;
+        }
+
+    .options-btn {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        color: #666;
+        font-size: 1.2em;
+        cursor: pointer;
+        padding: 4px 8px;
+        z-index: 11;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+        .options-btn:hover {
+            color: #000;
+            background: #f0f0f0;
+            border-color: #000;
+        }
+
+    .options-menu {
+        display: none;
+        position: absolute;
+        right: 8px;
+        top: 48px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        z-index: 10;
+        min-width: 160px;
+        border: 1px solid #e0e0e0;
+        overflow: hidden;
+    }
+
+        .options-menu button {
+            display: block;
+            width: 100%;
+            background: none;
+            border: none;
+            color: #000;
+            padding: 12px 18px;
+            text-align: left;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+            .options-menu button:hover {
+                background: #f5f5f5;
+                color: #000;
+            }
+    /* === 🎯 Fix: Context-Menü über allem + Hover deaktivieren === */
+
+    /* Context-Menü über alle Notizen legen */
+    .options-menu {
+        z-index: 9999 !important;
+    }
+
+    /* Wenn Menü offen ist: Hover-Highlight deaktivieren */
+    li.menu-open:hover {
+        transform: none !important;
+        box-shadow: none !important;
+        border-color: #e0e0e0 !important;
+    }
+
+    /* === 🎯 Fix: Scrollbalken beim Hover verhindern === */
+
+    /* Liste insgesamt minimal breiter machen */
+    .notes-sidebar ul {
+        padding-right: 6px; /* Platz für Scrollbar reservieren */
+        margin-right: -6px; /* gleicht das visuell aus */
+    }
+
+    /* Notiz-Element: Verhindere, dass Hover-Effekt Breite ändert */
+    .notes-sidebar li {
+        margin: 0.5rem 0;
+        border-radius: 12px;
+        transition: all 0.25s ease;
+        background: white;
+        border: 1px solid #e0e0e0;
+        position: relative;
+        box-sizing: border-box; /* wichtig, damit Border/Shadow Breite nicht verändert */
+    }
+
+        /* Hover-Highlight bleibt innerhalb der gleichen Breite */
+        .notes-sidebar li:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #000;
+            overflow: visible; /* verhindert, dass Shadow abgeschnitten wird */
+        }
+
+    /* === 🎯 Wenn das Menü offen ist: Hover global deaktivieren === */
+    body.menu-active .notes-sidebar li:hover {
+        transform: none !important;
+        box-shadow: none !important;
+        border-color: #e0e0e0 !important;
+    }
+
+    /* Aktive Notiz bleibt hervorgehoben, auch bei offenem Menü */
+    li.menu-open {
+        background: #f0f0f0 !important;
+        border-color: #000 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        z-index: 9998 !important;
+    }
+
+    /* Context-Menü immer im Vordergrund */
+    .options-menu {
+        z-index: 9999 !important;
+    }
+
+</style>
+<div class="notes-container">
+    <!-- Sidebar: -->
+    <aside class="notes-sidebar">
+        <div style="display: flex; flex-direction: row; gap: 8px; align-items: center; margin-bottom: 1.1rem;">
+            <input type="text" id="note-search" placeholder="Notiz suchen..." 
+                   style="flex:1; padding:7px 10px; border-radius:6px; border:1px solid #25273c; background:#23272F; color:#fff; font-size:15px;" autocomplete="off" />
+            <form method="post" asp-page-handler="NewNote" style="margin:0;">
+                <button type="submit" class="add-note-btn" title="Neue Notiz erstellen" style="padding:0 16px; min-width:40px;">+</button>
+            </form>
+        </div>
+        <ul id="notes-list">
+            @foreach (var note in Model.Notes)
+            {
+                <li id="note-li-@note.Id"
+                    class="@(Model.SelectedNote?.Id == note.Id ? "active" : "")"
+                    data-content="@note.Inhalt" style="position:relative;">
+                    <a href="@Url.Page("./Index", new { id = note.Id })" style="display:block;">
+                        <div>@GetNoteSidebarTitle(note)</div>
+                        <div class="note-date" style="float:none; color:#adadba; font-size:0.98em; margin:2px 0 0 0;">
+                            @note.LetzteBearbeitung.ToString("dd.MM.yyyy")
+                        </div>
+                    </a>
+                    <button class="options-btn" type="button" title="Optionen" onclick="toggleOptionsMenu(this)">
+                        &#x22EE;
+                    </button>
+                    <div class="options-menu" style="display:none; position:absolute; right:8px; top:38px; background:#23272F; border-radius:7px; box-shadow:0 2px 12px rgba(0, 0, 0, 0.15); z-index:10; min-width:110px;">
+                        <button type="button" onclick="deleteNote(@note.Id)">🗑️ Löschen</button>
+                        <button type="button" onclick="openShareModal(@note.Id)">🔗 Teilen</button>
+                        <button type="button" onclick="toggleFavoriteNote(@note.Id, this)">
+                            @(Model.FavoriteNoteIds.Contains(note.Id) ? "★ Entfavorisieren" : "⭐ Favorisieren")
+                        </button>
+
+
+                    </div>
+                </li>
+            }
+        </ul>
+    </aside>
+    <!-- Editor: -->
+    <main class="notes-main">
+        @if (Model.Notes == null || Model.Notes.Count == 0)
+        {
+            <!-- Editor bleibt leer, wenn keine Notizen vorhanden sind -->
+        }
+        else if (Model.SelectedNote != null)
+        {
+            <div class="edit-area">
+                <div class="note-title"
+                     contenteditable="true"
+                     id="noteTitle"
+                     spellcheck="false"
+                     oninput="triggerAutoSave()">
+                    @(Model.SelectedNote.Titel == "Neue Notiz" ? "" : Model.SelectedNote.Titel)
+                </div>
+                <div class="note-content"
+                     contenteditable="true"
+                     id="noteContent"
+                     spellcheck="true"
+                     oninput="triggerAutoSave()">
+                    @Html.Raw(Model.SelectedNote.Inhalt?.Replace("\n", "<br>"))
+                </div>
+                <span class="auto-save-info" id="saveStatus">Alle Änderungen werden automatisch gespeichert.</span>
+            </div>
+        }
+        else
+        {
+            <div>Bitte eine Notiz auswählen.</div>
+        }
+    </main>
+</div>
+<script>
+    function getCleanText(el) {
+        if (!el) return "";
+        let html = el.innerHTML;
+        html = html.replace(/<div><br><\/div>/gi, '\n')
+                   .replace(/<div>/gi, '\n')
+                   .replace(/<\/div>/gi, '')
+                   .replace(/<br>/gi, '\n');
+        let tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    }
+
+    let noteTitleElem = document.getElementById('noteTitle');
+    let noteContentElem = document.getElementById('noteContent');
+    let lastTitle = getCleanText(noteTitleElem) || "";
+    let lastContent = getCleanText(noteContentElem) || "";
+    let timer, isDirty = false;
+
+    function triggerAutoSave() {
+        if (!noteTitleElem || !noteContentElem) return;
+        isDirty = true;
+        document.getElementById("saveStatus").textContent = "Speichere ...";
+        clearTimeout(timer);
+        timer = setTimeout(() => autoSave(), 800);
+    }
+
+    function autoSave() {
+        if (!noteTitleElem || !noteContentElem) return;
+        let title = getCleanText(noteTitleElem).trim();
+        let content = getCleanText(noteContentElem);
+        if (!title && content) {
+            title = content.split('\n')[0].substring(0, 60);
+        }
+        if (title === lastTitle && content === lastContent) return;
+        let data = new FormData();
+        data.append("SelectedNote.Id", "@Model.SelectedNote?.Id");
+        data.append("SelectedNote.Titel", title || "Neue Notiz");
+        data.append("SelectedNote.Inhalt", content);
+
+        let token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (token) data.append('__RequestVerificationToken', token);
+
+        fetch(window.location.pathname, {
+            method: "POST",
+            body: data
+        })
+        .then(resp => resp.ok ? resp.text() : Promise.reject(resp))
+        .then(() => {
+            document.getElementById("saveStatus").textContent = "Alle Änderungen gespeichert.";
+            lastTitle = title;
+            lastContent = content;
+            isDirty = false;
+        })
+        .catch(() => {
+            document.getElementById("saveStatus").textContent = "Fehler beim Speichern!";
+        });
+    }
+
+          function toggleOptionsMenu(btn) {
+        // Schließe alle anderen Menüs und entferne "menu-open"-Klassen
+        document.querySelectorAll('.options-menu').forEach(m => {
+            m.style.display = 'none';
+            m.closest('li')?.classList.remove('menu-open');
+        });
+        document.body.classList.remove('menu-active');
+
+        // Öffne das Menü beim aktuellen Button
+        const menu = btn.nextElementSibling;
+        const li = btn.closest('li');
+        const isOpen = menu.style.display === 'block';
+
+        if (isOpen) {
+            // Menü schließen
+            menu.style.display = 'none';
+            li?.classList.remove('menu-open');
+            document.body.classList.remove('menu-active');
+        } else {
+            // Menü öffnen
+            menu.style.display = 'block';
+            li?.classList.add('menu-open');
+            document.body.classList.add('menu-active');
+        }
+
+        // Klick außerhalb schließt Menü wieder
+        setTimeout(() => {
+            document.addEventListener('click', function handler(e) {
+                if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                    menu.style.display = 'none';
+                    li?.classList.remove('menu-open');
+                    document.body.classList.remove('menu-active');
+                    document.removeEventListener('click', handler);
+                }
+            });
+        }, 0);
+    }
+
+
+
+           function deleteNote(noteId) {
+        if (!confirm('Notiz wirklich löschen?')) return;
+
+        fetch(`?handler=DeleteNote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            },
+            body: JSON.stringify({ id: noteId })
+        })
+        .then(resp => {
+            if (resp.ok) {
+                // Entferne das <li>-Element aus der Sidebar
+                document.getElementById('note-li-' + noteId)?.remove();
+
+                // Editor leeren nur wenn die gelöschte Notiz ausgewählt war
+                if (selectedNoteId === noteId) {
+                    document.querySelector('.edit-area')?.remove();
+
+                    const notesMain = document.querySelector('.notes-main');
+                    if (notesMain) {
+                        notesMain.innerHTML = '<div>Bitte eine Notiz auswählen.</div>';
+                    }
+                }
+            } else {
+                alert('Fehler beim Löschen!');
+            }
+        })
+        .catch(err => {
+            console.error("Fehler beim Löschen:", err);
+            alert('Fehler beim Löschen!');
+        });
+    }
+
+
+
+    function openShareModal(noteId) {
+        shareNoteId = noteId;
+        selectedUserIds = [];
+        const searchInput = document.getElementById("shareUserSearch");
+        const userListDiv = document.getElementById("shareUserList");
+        const modalEl = document.getElementById("shareModal");
+
+        if (!searchInput || !userListDiv || !modalEl) {
+            alert("Sharing Modal nicht korrekt im DOM!");
+            return;
+        }
+        searchInput.value = "";
+        userListDiv.innerHTML = "<div>Lädt...</div>";
+
+        fetch('?handler=GetUsersFromCompany')
+            .then(res => res.json())
+            .then(users => {
+                allCompanyUsers = users;
+                renderShareUserList("");
+            });
+
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function closeShareModal() {
+        const modalEl = document.getElementById("shareModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    function renderShareUserList(search) {
+        const container = document.getElementById("shareUserList");
+        let filtered = allCompanyUsers;
+        if (search) {
+            const s = search.trim().toLowerCase();
+            filtered = allCompanyUsers.filter(u =>
+                (u.name && u.name.toLowerCase().includes(s)) ||
+                (u.email && u.email.toLowerCase().includes(s)));
+        }
+        if (!filtered.length) {
+            container.innerHTML = "<div style='color:#999'>Keine Benutzer gefunden.</div>";
+            return;
+        }
+        container.innerHTML = filtered.map(u => `
+            <label>
+                <input type="checkbox" value="${u.id}" onchange="toggleShareUser(this)">
+                ${u.name} <span style="color:#90caf9; font-size:0.93em">(${u.email})</span>
+            </label>
+        `).join('');
+    }
+
+    function toggleShareUser(cb) {
+        const id = cb.value;
+        if (cb.checked) {
+            if (!selectedUserIds.includes(id)) selectedUserIds.push(id);
+        } else {
+            selectedUserIds = selectedUserIds.filter(x => x !== id);
+        }
+    }
+
+    const shareSearch = document.getElementById("shareUserSearch");
+    if (shareSearch) {
+        shareSearch.addEventListener("input", function () {
+            renderShareUserList(this.value);
+        });
+    }
+
+
+    function submitShare() {
+        if (!selectedUserIds.length) {
+            alert("Bitte mindestens einen Benutzer auswählen!");
+            return;
+        }
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        fetch('@Url.Page("Index", null, new { handler = "ShareNote" }, null)', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token // Token im Header
+            },
+            body: JSON.stringify({ NoteId: shareNoteId, UserIds: selectedUserIds })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Serverfehler: " + res.status);
+            return res.json();
+        })
+        .then(json => {
+            if (json.success) {
+                alert("Notiz wurde geteilt!");
+                closeShareModal();
+            } else {
+                alert("Fehler beim Teilen: " + (json.message || ""));
+            }
+        })
+        .catch(err => {
+            alert("Fehler beim Teilen: " + err.message);
+        });
+    }
+
+    document.getElementById('note-search').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        const items = document.querySelectorAll('#notes-list li');
+        items.forEach(li => {
+            const titleText = li.textContent.toLowerCase();
+            const contentText = (li.getAttribute('data-content') || '').toLowerCase();
+            if (titleText.includes(q) || contentText.includes(q)) {
+                li.style.display = '';
+            } else {
+                li.style.display = 'none';
+            }
+        });
+    });
+        function toggleFavoriteNote(noteId, btn) {
+        fetch('@Url.Page("Index", null, new { handler = "ToggleFavoriteNote" }, null)', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            },
+            body: JSON.stringify(noteId)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.isFavorite) {
+                btn.textContent = "★ Entfavorisieren";
+            } else {
+                btn.textContent = "⭐ Favorisieren";
+            }
+        })
+        .catch(err => {
+            alert("Fehler beim Favorisieren: " + err.message);
+        });
+    }
+
+</script>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#16171c; border:1px solid #25273c; border-radius:8px;">
+      <div class="modal-header">
+        <h5 class="modal-title" id="shareModalLabel">Notiz teilen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="shareUserSearch" placeholder="Benutzer suchen..." 
+               style="width:100%; padding:10px; border-radius:6px; border:1px solid #25273c; background:#23272F; color:#fff; font-size:15px; margin-bottom:10px;" autocomplete="off" />
+        <div id="shareUserList" style="max-height:300px; overflow-y:auto; border-radius:6px; background:#1e1f24; padding:10px; border:1px solid #25273c;">
+            <!-- Benutzerliste wird hier angezeigt -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+        <button type="button" class="btn btn-primary" onclick="submitShare()">Teilen</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,209 @@
+﻿@page "{dokumentId:guid?}"
+@model DmsProjeckt.Pages.Dokument.VersionenModel
+@{
+    ViewData["Title"] = "📂 Dokument-Versionen";
+}
+
+@section Styles {
+    <style>
+        /* === MODERN WHITE DESIGN === */
+        .versions-wrapper {
+            background: white;
+            border-radius: 1.1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 2.5rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .versions-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .versions-header h2 {
+            color: #000;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .versions-header p {
+            color: #666;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Table Container */
+        .table-responsive {
+            background: white;
+            border-radius: 0.8rem;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .table {
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table thead {
+            background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+        }
+
+        .table thead th {
+            color: #000;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1rem 1.2rem;
+            border-bottom: 2px solid #e0e0e0;
+            border-top: none;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s;
+            background-color: white;
+        }
+
+        .table tbody td {
+            color: #333 !important;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.001);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .table tbody tr:nth-child(even):hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            color: #333;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #1e88e5;
+            border-color: #1e88e5;
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        /* Text Truncate */
+        .text-truncate {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Empty State */
+        .text-muted {
+            color: #999 !important;
+            font-style: italic;
+        }
+
+        /* Back Button */
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+        }
+    </style>
+}
+
+<!-- 🗂️ Modern Container -->
+<div class="versions-wrapper">
+    
+    <!-- Header -->
+    <div class="versions-header">
+        <h2>📂 Historie der Dokumentversionen</h2>
+        <p>Alle gespeicherten Versionen dieses Dokuments</p>
+    </div>
+
+    <!-- 📋 Tabelle mit allen gespeicherten Versionen -->
+    <div class="table-responsive mb-4">
+        <table class="table align-middle">
+        <thead>
+            <tr>
+                <th><i class="bi bi-hash"></i> ID</th>
+                <th><i class="bi bi-file-earmark"></i> Dateiname</th>
+                <th><i class="bi bi-folder"></i> Pfad</th>
+                <th><i class="bi bi-tags"></i> Version</th>
+                <th><i class="bi bi-calendar-event"></i> Hochgeladen am</th>
+                <th><i class="bi bi-person"></i> Benutzer</th>
+                <th><i class="bi bi-download"></i> Download</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.DokumentVersionen.Any())
+            {
+                foreach (var version in Model.DokumentVersionen)
+                {
+                    <tr>
+                        <td>@version.Id</td>
+                        <td>@version.Dateiname</td>
+                        <td class="text-truncate" style="max-width: 300px;">@version.Dateipfad</td>
+                        <td>@version.VersionsLabel</td>
+                        <td>@version.HochgeladenAm.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@version.ApplicationUser?.Email</td>
+                        <td>
+                            <a href="@version.Dateipfad" class="btn btn-action" target="_blank" title="Download">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Keine Versionen verfügbar für dieses Dokument.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+
+    <!-- Zurück Button -->
+    <div class="mt-3">
+        <a href="#" class="btn btn-back" onclick="event.preventDefault(); history.back();">
+            ↩️ Zurück
+        </a>
+    </div>
+</div>

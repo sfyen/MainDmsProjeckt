@@ -1,0 +1,761 @@
+﻿@page
+@model DmsProjeckt.Pages.Workflows.IndexModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<div class="modern-workflow-wrapper">
+    <div class="workflow-header">
+        <h2>📋 Alle Workflows</h2>
+        <p>Verwalten Sie Ihre Workflows und behalten Sie den Überblick</p>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="search-container">
+            <input type="text" id="workflowSearch" class="search-input" placeholder="🔍 Suche nach Titel, Datum oder Status..." autocomplete="off" />
+        </div>
+        <a asp-page="./Erstellen" class="btn btn-primary">+ Neuer Workflow</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-workflow-table">
+            <thead>
+                <tr>
+                    <th data-column="titel" class="sortable">Titel</th>
+                    <th data-column="erstellt" class="sortable">Erstellt</th>
+                    <th data-column="aenderung" class="sortable">Letzte Änderung</th>
+                    <th data-column="status" class="sortable">Status</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var workflow in Model.Workflows)
+                {
+                    var nextStep = workflow.Steps?
+                    .Where(s => !s.Completed)
+                    .OrderBy(s => s.Order)
+                    .FirstOrDefault();
+
+                    var nextStepId = nextStep?.Id ?? 0;
+
+                    <tr>
+                        <td>
+                            <div class="workflow-title">@workflow.Title</div>
+                        </td>
+                        <td>@(workflow.CreatedAt.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
+                        <td>@(workflow.LastModified?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
+                        <td>
+                            @{
+                                var allCompleted = workflow.Steps?.All(s => s.Completed) ?? false;
+                                var hasSteps = workflow.Steps?.Any() ?? false;
+                            }
+                            @if (hasSteps && allCompleted)
+                            {
+                                <span class="workflow-status status-completed">✓ Abgeschlossen</span>
+                            }
+                            else if (hasSteps)
+                            {
+                                <span class="workflow-status status-in-progress">⏳ In Bearbeitung</span>
+                            }
+                            else
+                            {
+                                <span class="workflow-status status-no-steps">⚠ Keine Steps</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn btn-details" onclick="openDetails(@workflow.Id, @nextStepId)">
+                                    Details
+                                </button>
+                                @if (workflow.UserId == Model.CurrentUserId)
+                                {
+                                    <a asp-page="Bearbeiten" asp-route-id="@workflow.Id" class="action-btn btn-edit">
+                                        Bearbeiten
+                                    </a>
+                                    <button class="action-btn btn-delete" onclick="confirmDelete(@workflow.Id)">
+                                        Löschen
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <!-- Pagination -->
+       
+    </div>
+    <div class="pagination-container">
+        <button class="pagination-btn prev-btn" disabled>← Zurück</button>
+        <span class="pagination-info">
+            Seite <span class="current-page">1</span> von <span class="total-pages">1</span>
+        </span>
+        <button class="pagination-btn next-btn">Weiter →</button>
+    </div>
+
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Details</h5>
+                <button type="button" class="btn-close" onclick="closeModal()" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Inhalt kommt hier rein -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Löschen bestätigen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body">
+                Möchtest du diesen Workflow wirklich löschen?
+            </div>
+            <div class="modal-footer">
+                <form method="post">
+                    <input type="hidden" id="deleteId" name="DeleteId" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-danger">Löschen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id) {
+            document.getElementById("deleteId").value = id;
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+
+        function openDetails(workflowId, stepId) {
+            window.location.href = `/Workflows/StepDetail/${workflowId}/${stepId}`;
+        }
+
+        function openModal() {
+            const modal = document.getElementById("detailsModal");
+            modal.classList.add("show");
+            modal.style.display = "block";
+            modal.removeAttribute("aria-hidden");
+            modal.setAttribute("aria-modal", "true");
+            modal.focus();
+
+            const actionBtn = modal.querySelector("#actionBtn");
+            if (actionBtn) actionBtn.focus();
+        }
+
+        function closeModal() {
+            const modalEl = document.getElementById("detailsModal");
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById("actionBtn");
+            if (btn) {
+                btn.addEventListener("click", () => {
+                    alert("Button funktioniert! ✅");
+                });
+            }
+
+            // Tabellen-Sortierung
+            const table = document.querySelector('.modern-workflow-table');
+            const headers = table.querySelectorAll('th.sortable');
+            let currentSort = { column: null, asc: true };
+
+            headers.forEach(header => {
+                header.style.cursor = 'pointer';
+                header.addEventListener('click', () => {
+                    const column = header.getAttribute('data-column');
+                    const asc = currentSort.column === column ? !currentSort.asc : true;
+                    currentSort = { column, asc };
+
+                    // Entferne alle Sort-Indikatoren
+                    headers.forEach(h => h.classList.remove('asc', 'desc'));
+                    header.classList.add(asc ? 'asc' : 'desc');
+
+                    // Sortiere die Zeilen
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const index = header.cellIndex;
+
+                    rows.sort((a, b) => {
+                        let valA = a.cells[index].textContent.trim();
+                        let valB = b.cells[index].textContent.trim();
+
+                        // Datumsformat erkennen (dd.MM.yyyy HH:mm)
+                        if (column === 'erstellt' || column === 'aenderung') {
+                            const parseDate = (str) => {
+                                if (str === '-') return new Date(0);
+                                const [date, time] = str.split(' ');
+                                const [d, m, y] = date.split('.');
+                                const [h, min] = (time || '00:00').split(':');
+                                return new Date(y, m - 1, d, h, min);
+                            };
+                            valA = parseDate(valA);
+                            valB = parseDate(valB);
+                            return asc ? valA - valB : valB - valA;
+                        }
+
+                        // Status-Sortierung
+                        if (column === 'status') {
+                            const statusOrder = { '✓ Abgeschlossen': 3, '⏳ In Bearbeitung': 2, '⚠ Keine Steps': 1 };
+                            const getOrder = (v) => {
+                                if (v.includes('Abgeschlossen')) return 3;
+                                if (v.includes('Bearbeitung')) return 2;
+                                return 1;
+                            };
+                            valA = getOrder(valA);
+                            valB = getOrder(valB);
+                            return asc ? valA - valB : valB - valA;
+                        }
+
+                        // Text-Sortierung
+                        return asc ? valA.localeCompare(valB, 'de') : valB.localeCompare(valA, 'de');
+                    });
+
+                    // Zeilen neu einfügen
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+            // Tabellen-Suche mit Highlighting
+            const searchInput = document.getElementById('workflowSearch');
+            const searchTbody = table.querySelector('tbody');
+            const allRows = Array.from(searchTbody.querySelectorAll('tr'));
+            
+            // Original-Inhalte speichern
+            const originalContents = allRows.map(row => ({
+                row: row,
+                cells: Array.from(row.cells).slice(0, 4).map(cell => cell.innerHTML)
+            }));
+
+            function highlightText(html, searchTerm) {
+                if (!searchTerm) return html;
+                // Nur Text außerhalb von HTML-Tags ersetzen
+                const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Split by HTML tags, highlight only text parts
+                return html.replace(/(<[^>]*>)|([^<]+)/g, (match, tag, text) => {
+                    if (tag) return tag; // HTML-Tag unverändert lassen
+                    if (text) {
+                        const regex = new RegExp(`(${escapedTerm})`, 'gi');
+                        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+                    }
+                    return match;
+                });
+            }
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                const searchTermLower = searchTerm.toLowerCase();
+
+                originalContents.forEach(({ row, cells }) => {
+                    // Zuerst Original-Inhalte wiederherstellen
+                    cells.forEach((content, i) => {
+                        if (row.cells[i]) row.cells[i].innerHTML = content;
+                    });
+
+                    if (!searchTerm) {
+                        row.style.display = '';
+                        return;
+                    }
+
+                    // Prüfe ob Treffer in einer Zelle
+                    const cellTexts = cells.map(c => c.replace(/<[^>]*>/g, '').toLowerCase());
+                    const matchesSearch = cellTexts.some(text => text.includes(searchTermLower));
+
+                    if (matchesSearch) {
+                        row.style.display = '';
+                        // Highlighting anwenden
+                        cells.forEach((content, i) => {
+                            if (row.cells[i] && content.toLowerCase().includes(searchTermLower)) {
+                                row.cells[i].innerHTML = highlightText(content, searchTerm);
+                            }
+                        });
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+                   document.addEventListener("DOMContentLoaded", () => {
+            console.log("🔥 Workflow Pagination + Suche aktiviert");
+
+            const table = document.querySelector(".modern-workflow-table");
+            const allRows = Array.from(table.querySelectorAll("tbody tr"));
+            const pagination = document.querySelector(".pagination-container");
+            const searchInput = document.getElementById("workflowSearch");
+
+            const prevBtn = pagination.querySelector(".prev-btn");
+            const nextBtn = pagination.querySelector(".next-btn");
+            const currentPage = pagination.querySelector(".current-page");
+            const totalPages = pagination.querySelector(".total-pages");
+
+            const ITEMS_PER_PAGE = 7;
+            let filteredRows = [...allRows];
+            let page = 1;
+
+            // === Rendering-Funktion ===
+            function render() {
+                const total = Math.ceil(filteredRows.length / ITEMS_PER_PAGE) || 1;
+                const start = (page - 1) * ITEMS_PER_PAGE;
+                const end = start + ITEMS_PER_PAGE;
+
+                allRows.forEach(r => (r.style.display = "none"));
+                filteredRows.slice(start, end).forEach(r => (r.style.display = ""));
+
+                currentPage.textContent = page;
+                totalPages.textContent = total;
+                prevBtn.disabled = page === 1;
+                nextBtn.disabled = page === total;
+
+                console.log(`📄 Workflows: Seite ${page}/${total} (${filteredRows.length} Treffer)`);
+            }
+
+            // === Paginierungs-Events ===
+            prevBtn.addEventListener("click", e => {
+                e.preventDefault();
+                if (page > 1) {
+                    page--;
+                    render();
+                }
+            });
+
+            nextBtn.addEventListener("click", e => {
+                e.preventDefault();
+                const total = Math.ceil(filteredRows.length / ITEMS_PER_PAGE) || 1;
+                if (page < total) {
+                    page++;
+                    render();
+                }
+            });
+
+            // === Suchlogik + Pagination-Reset ===
+            const originalContents = allRows.map(row => ({
+                row,
+                cells: Array.from(row.cells).slice(0, 4).map(c => c.innerHTML)
+            }));
+
+            function highlightText(html, searchTerm) {
+                if (!searchTerm) return html;
+                const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return html.replace(/(<[^>]*>)|([^<]+)/g, (m, tag, text) => {
+                    if (tag) return tag;
+                    if (text) {
+                        const regex = new RegExp(`(${escaped})`, "gi");
+                        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+                    }
+                    return m;
+                });
+            }
+
+            searchInput.addEventListener("input", function () {
+                const term = this.value.trim().toLowerCase();
+
+                filteredRows = [];
+
+                originalContents.forEach(({ row, cells }) => {
+                    // Original-Inhalte wiederherstellen
+                    cells.forEach((content, i) => {
+                        if (row.cells[i]) row.cells[i].innerHTML = content;
+                    });
+
+                    if (!term) {
+                        filteredRows.push(row);
+                        row.style.display = "";
+                        return;
+                    }
+
+                    const cellTexts = cells.map(c => c.replace(/<[^>]*>/g, "").toLowerCase());
+                    const matches = cellTexts.some(text => text.includes(term));
+
+                    if (matches) {
+                        filteredRows.push(row);
+                        cells.forEach((content, i) => {
+                            if (row.cells[i] && content.toLowerCase().includes(term)) {
+                                row.cells[i].innerHTML = highlightText(content, term);
+                            }
+                        });
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                // Nach jeder Suche auf Seite 1 springen
+                page = 1;
+                render();
+            });
+
+            // Initial render
+            render();
+        });
+    </script>
+}
+
+<style>
+    /* Modern Workflow Wrapper */
+    .modern-workflow-wrapper {
+        background: white;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem;
+        margin: 2rem 0;
+    }
+
+    /* Search Input Styling */
+    .search-container {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1.2rem;
+        font-size: 1rem;
+        border: 2px solid #e0e0e0 !important;
+        border-radius: 0.6rem;
+        background: white !important;
+        background-color: white !important;
+        color: #333 !important;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #000;
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .search-input::placeholder {
+        color: #999;
+    }
+
+    /* Search Highlight */
+    .search-highlight {
+        background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+        color: #000;
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+        font-weight: 600;
+    }
+
+    .workflow-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .workflow-header h2 {
+        color: #000;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .workflow-header p {
+        color: #666;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Table Container */
+    .table-responsive {
+        border-radius: 0.8rem;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    /* Modern Table */
+    .modern-workflow-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        color: #333;
+        margin: 0;
+    }
+
+    /* Table Header */
+    .modern-workflow-table thead {
+        background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+        color: #000;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Table Cells */
+    .modern-workflow-table th,
+    .modern-workflow-table td {
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid #f5f5f5;
+        vertical-align: middle;
+        text-align: left;
+    }
+
+    .modern-workflow-table th {
+        font-weight: 600;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    /* Sortable Headers */
+    .modern-workflow-table th.sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s;
+    }
+
+    .modern-workflow-table th.sortable:hover {
+        background: #eeeeee;
+    }
+
+    .modern-workflow-table th.sortable::after {
+        content: '';
+        display: inline-block;
+        margin-left: 0.5rem;
+        opacity: 0.3;
+    }
+
+    .modern-workflow-table th.sortable:hover::after {
+        content: '↕';
+        opacity: 0.5;
+    }
+
+    .modern-workflow-table th.asc::after {
+        content: ' ↑' !important;
+        opacity: 1 !important;
+        color: #000;
+        font-weight: bold;
+    }
+
+    .modern-workflow-table th.desc::after {
+        content: ' ↓' !important;
+        opacity: 1 !important;
+        color: #000;
+        font-weight: bold;
+    }
+
+    .modern-workflow-table tbody tr {
+        background-color: white;
+        transition: all 0.2s;
+    }
+
+    .modern-workflow-table tbody tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    /* Hover Row */
+    .modern-workflow-table tbody tr:hover {
+        background-color: #f0f4f8;
+        transform: scale(1.001);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* Workflow Title */
+    .workflow-title {
+        font-weight: 600;
+        color: #000;
+        font-size: 1rem;
+    }
+
+    /* Action Buttons Container */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Modern Action Buttons */
+    .action-btn {
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-details {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-details:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-edit {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: #d97706;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-delete {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Primary Button */
+    .btn-primary {
+        background-color: #000;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #333;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Modal Styling */
+    .modal-content {
+        background-color: white;
+        color: #000;
+        border: 1px solid #e0e0e0;
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1.5rem 2rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #f0f0f0;
+        background: #f9f9f9;
+        padding: 1.25rem 2rem;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .modal-title {
+        color: #000;
+        font-weight: 700;
+        font-size: 1.3rem;
+    }
+
+    .modal-footer .btn-secondary {
+        background: white;
+        border: 1.5px solid #e0e0e0;
+        color: #666;
+    }
+
+    .modal-footer .btn-secondary:hover {
+        background: #f5f5f5;
+        color: #000;
+    }
+
+    .modal-footer .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .modal-footer .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+    }
+
+    /* Workflow Status Badges */
+    .workflow-status {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-in-progress {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    .status-no-steps {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Pagination Styling */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        margin-top: 1rem;
+    }
+
+    .pagination-btn {
+        background: #000;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+    .pagination-info {
+        color: #666;
+        font-weight: 500;
+    }
+
+</style>
