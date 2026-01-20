@@ -1,0 +1,52 @@
+﻿@page
+@model DmsProjeckt.Pages.Workflows.SecurityModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <title>Wartung - DMS Projekt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #eee;
+            text-align: center;
+            padding-top: 15%;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: #444;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background: #666;
+            }
+    </style>
+</head>
+<body>
+    <h1>🚧 Diese Website kommt bald 🚧</h1>
+    <p>Bitte geben Sie den Zugangscode ein:</p>
+    <form method="post">
+        <input type="password" name="code" placeholder="Zugangscode" />
+        <button type="submit">Zugang</button>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <p style="color:red;">@Model.Message</p>
+    }
+</body>
+</html>

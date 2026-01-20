@@ -176,14 +176,38 @@ if (!app.Environment.IsDevelopment())
 }
 
 
-// ==============================
-// 🔹 Pipeline
-// ==============================
 app.UseRouting();
 app.UseCors("AllowLocalFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
+
+// ==============================
+// 🔐 Zugangscode-Schutz (Wartungsseite)
+// ==============================
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.ToLower();
+
+    // Autoriser la page Security, les fichiers statiques et les hubs SignalR
+    if (path.Contains("security") || path.Contains(".css") || path.Contains(".js") ||
+        path.Contains(".png") || path.Contains(".jpg") || path.Contains("chathub") || path.Contains("sishub"))
+    {
+        await next();
+        return;
+    }
+
+    // Vérifie si l’utilisateur a le code d’accès
+    var access = context.Session.GetString("AccessGranted");
+    if (access != "true")
+    {
+        context.Response.Redirect("/Workflows/Security");
+        return;
+    }
+
+    await next();
+});
+
 
 
 app.UseStaticFiles();
