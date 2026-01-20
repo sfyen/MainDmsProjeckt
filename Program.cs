@@ -45,7 +45,6 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
 })
-
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -97,7 +96,7 @@ else
 {
     Console.WriteLine($"⚠️ Firebase-Schlüsseldatei nicht gefunden: {jsonKeyPath}");
     Console.WriteLine("   Firebase Storage wird NICHT initialisiert.");
-    
+
     // Dummy-Service registrieren, damit DI nicht fehlschlägt
     builder.Services.AddSingleton<StorageService>(provider => null);
 }
@@ -159,8 +158,6 @@ builder.Services.AddCors(options =>
 var pdfContext = new CustomAssemblyLoadContext();
 pdfContext.LoadUnmanagedLibrary(CustomAssemblyLoadContext.GetLibraryPath());
 
-
-
 // ==============================
 // 🔹 App erstellen
 // ==============================
@@ -175,7 +172,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-
 app.UseRouting();
 app.UseCors("AllowLocalFrontend");
 app.UseAuthentication();
@@ -183,44 +179,46 @@ app.UseAuthorization();
 app.UseSession();
 
 // ==============================
-// 🔐 Zugangscode-Schutz (Wartungsseite)
+// 🔐 Toujours rediriger vers la page Security
 // ==============================
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value?.ToLower();
 
-    // Autoriser la page Security, les fichiers statiques et les hubs SignalR
-    if (path.Contains("security") || path.Contains(".css") || path.Contains(".js") ||
-        path.Contains(".png") || path.Contains(".jpg") || path.Contains("chathub") || path.Contains("sishub"))
+    // ⚙️ Autoriser uniquement Security et fichiers statiques
+    if (path.Contains("/workflows/security") ||
+        path.Contains(".css") ||
+        path.Contains(".js") ||
+        path.Contains(".png") ||
+        path.Contains(".jpg") ||
+        path.Contains("chathub") ||
+        path.Contains("sishub"))
     {
         await next();
         return;
     }
 
-    // Vérifie si l’utilisateur a le code d’accès
-    var access = context.Session.GetString("AccessGranted");
-    if (access != "true")
-    {
-        context.Response.Redirect("/Workflows/Security");
-        return;
-    }
-
-    await next();
+    // 🚨 Rediriger tout le reste vers la page Security
+    context.Response.Redirect("/Workflows/Security");
 });
-
-
 
 app.UseStaticFiles();
 
-app.MapControllers();    // 🟢 <- MUSS vor MapGet stehen
-app.MapGet("/", ctx => {
-    ctx.Response.Redirect("/Willkommen");
+// ==============================
+// 🔹 Routes / Mapping
+// ==============================
+app.MapControllers();
+
+// 🔁 Rediriger la racine vers la page Security
+app.MapGet("/", ctx =>
+{
+    ctx.Response.Redirect("/Workflows/Security");
     return Task.CompletedTask;
 });
+
 app.MapRazorPages();
 app.MapHub<ChatHub>("/chathub");
 app.MapHub<SISHub>("/sisHub");
-
 
 // ==============================
 // 🔹 Rollen & Datenbank-Seeding
