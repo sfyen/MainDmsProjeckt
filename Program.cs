@@ -157,7 +157,9 @@ builder.Services.AddCors(options =>
 // 🔹 DinkToPdf native Bibliothek laden
 // ==============================
 var pdfContext = new CustomAssemblyLoadContext();
-pdfContext.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), "Native", "libwkhtmltox.dll"));
+pdfContext.LoadUnmanagedLibrary(CustomAssemblyLoadContext.GetLibraryPath());
+
+
 
 // ==============================
 // 🔹 App erstellen
